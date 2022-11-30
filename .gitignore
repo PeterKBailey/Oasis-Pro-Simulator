@@ -37,6 +37,7 @@ Thumbs.db
 
 # qtcreator generated files
 *.pro.user*
+build-oasis-pro-team18-Desktop-Debug/
 
 # xemacs temporary files
 *.flc
@@ -70,4 +71,5 @@ Thumbs.db
 # --------
 *.dll
 *.exe
+
 
