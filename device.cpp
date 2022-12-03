@@ -10,6 +10,11 @@ Device::Device(QObject *parent) : QObject(parent),
 
     this->sessionTimer.setSingleShot(true);
     connect(&sessionTimer, SIGNAL(timeout()), this, SLOT(StartSessionButtonClicked()));
+
+    //
+    this->batteryLevelTimer.setInterval(2000);
+    connect(&batteryLevelTimer, SIGNAL(timeout()), this, SLOT(DepleteBattery()));
+
 }
 
 State Device::getState() const
@@ -17,11 +22,22 @@ State Device::getState() const
     return state;
 }
 
-int Device::getBatteryLevel() const
+double Device::getBatteryLevel() const
 {
     return batteryLevel;
 }
 
+void Device::powerOn(){
+    this->state = State::ChoosingSession;
+    this->batteryLevelTimer.start();
+}
+void Device::powerOff(bool softOff) {
+    if(softOff){
+        // ?
+    }
+    this->state = State::Off;
+    this->batteryLevelTimer.stop();
+}
 
 // SLOTS
 // person presses mouse
@@ -40,9 +56,9 @@ void Device::PowerButtonReleased(){
 // else they didnt let it go within 1s, this happens
 void Device::PowerButtonHeld(){
     if(this->state == State::Off){
-        this->state = State::ChoosingSession;
+        this->powerOn();
     } else {
-        this->state = State::Off;
+        this->powerOff(false);
     }
     qDebug() << "power held\n";
     emit this->deviceUpdated();
@@ -58,4 +74,23 @@ void Device::ResetBattery(){
 }
 void Device::SessionComplete(){
 
+}
+
+void Device::DepleteBattery(){
+    static int prevWholeLevel;
+    prevWholeLevel = this->batteryLevel;
+    switch(this->state){
+        case State::ChoosingSession: case State::ChoosingSavedTherapy:
+            this->batteryLevel -= 0.1;
+            break;
+        case State::InSession:
+            this->batteryLevel -= 0.2*this->intensity; // assuming intensity 1-8
+            break;
+        case State::Paused:
+            this->batteryLevel -= 0.05;
+    }
+
+    // prevent the battery from requiring display update constantly
+    if(prevWholeLevel - (int)this->batteryLevel == 1)
+        emit this->deviceUpdated();
 }
