@@ -34,8 +34,8 @@ private:
     int selectedSessionType; // (frequency) 0, 1, 2, 3
 
     // stored data of the groups and sessions we have, set up in ctor
-    SessionGroup sessionGroups[3];
-    SessionType sessionTypes[4];
+//    SessionGroup sessionGroups[3];
+//    SessionType sessionTypes[4];
 
 public slots:
     void PowerButtonPressed();
