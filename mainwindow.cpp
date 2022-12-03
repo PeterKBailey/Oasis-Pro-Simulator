@@ -43,7 +43,7 @@ void MainWindow::updateDisplay(){
     }
     this->setGraph(3,6);
     this->ui->powerButton->setStyleSheet("border: 5px solid green;");
-    this->ui->batteryDisplay->display(device->getBatteryLevel());
+    this->ui->batteryDisplay->display((int)device->getBatteryLevel());
 }
 
 void MainWindow::clearDisplay(){

@@ -19,13 +19,14 @@ public:
 
     // getters
     State getState() const;
-    int getBatteryLevel() const;
+    double getBatteryLevel() const;
 
 private:
     State state;
     QTimer sessionTimer;
     QTimer powerButtonTimer;
-    int batteryLevel;
+    QTimer batteryLevelTimer;
+    double batteryLevel;
     int intensity;
 
     // this is peter guessing at how this will work
@@ -37,6 +38,9 @@ private:
 //    SessionGroup sessionGroups[3];
 //    SessionType sessionTypes[4];
 
+    void powerOn();
+    void powerOff(bool);
+
 public slots:
     void PowerButtonPressed();
     void PowerButtonReleased();
@@ -47,6 +51,7 @@ public slots:
 private slots:
     void SessionComplete(); // for session timer
     void PowerButtonHeld(); // for powerbutton timer
+    void DepleteBattery(); // for battery timer
 
 signals:
     void deviceUpdated();
