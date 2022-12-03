@@ -4,6 +4,8 @@
 #include <QString>
 #include <QVector>
 
+
+
 struct SessionGroup {
     QString name;
     int durationMins;
@@ -13,7 +15,7 @@ struct SessionGroup {
 struct SessionType {
     QString name;
     QString wavelength;
-    SessionGroup(QString n, QString w) : name(n), wavelength(w) {}
+    SessionType(QString n, QString w) : name(n), wavelength(w) {}
 };
 
 struct Therapy {
@@ -21,7 +23,7 @@ struct Therapy {
     SessionType type;
     int intensity;
     QString username;
-    SessionGroup(SessionGroup g, SessionType t, int i, QString u) : group(g), type(t), intensity(i), username(u) {}
+    Therapy(SessionGroup g, SessionType t, int i, QString u) : group(g), type(t), intensity(i), username(u) {}
 };
 
 struct UserDesignedSession {
