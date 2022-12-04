@@ -10,6 +10,7 @@
 #include "defs.h"
 
 enum State {Off, ChoosingSession, ChoosingSavedTherapy, InSession, Paused};
+enum BatteryState { High, Low, CriticallyLow };
 
 class Device : public QObject
 {
@@ -19,14 +20,21 @@ public:
 
     // getters
     State getState() const;
+    BatteryState getBatteryState() const;
     double getBatteryLevel() const;
 
 private:
     State state;
+    BatteryState batteryState;
+
     QTimer sessionTimer;
+    int remainingSessionTime; // time, ms
+
     QTimer powerButtonTimer;
+
     QTimer batteryLevelTimer;
     double batteryLevel;
+
     int intensity;
 
     // this is peter guessing at how this will work
@@ -40,6 +48,8 @@ private:
 
     void powerOn();
     void powerOff(bool);
+    void pauseSession();
+    void resumeSession();
 
 public slots:
     void PowerButtonPressed();

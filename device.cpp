@@ -1,7 +1,7 @@
 #include "device.h"
 
 Device::Device(QObject *parent) : QObject(parent),
-    batteryLevel(100), state(State::Off)
+    batteryLevel(26), state(State::Off), remainingSessionTime(-1)
 {
     // set up the powerButtonTimer, tell it not to repeat, tell it to stop after 1s
     this->powerButtonTimer.setSingleShot(true);
@@ -14,7 +14,15 @@ Device::Device(QObject *parent) : QObject(parent),
     //
     this->batteryLevelTimer.setInterval(2000);
     connect(&batteryLevelTimer, SIGNAL(timeout()), this, SLOT(DepleteBattery()));
-
+    if(this->batteryLevel > 25){
+        this->batteryState = BatteryState::High;
+    }
+    else if(this->batteryLevel > 12){
+        this->batteryState = BatteryState::Low;
+    }
+    else {
+        this->batteryState = BatteryState::CriticallyLow;
+    }
 }
 
 State Device::getState() const
@@ -25,6 +33,11 @@ State Device::getState() const
 double Device::getBatteryLevel() const
 {
     return batteryLevel;
+}
+
+BatteryState Device::getBatteryState() const
+{
+    return batteryState;
 }
 
 void Device::powerOn(){
@@ -70,15 +83,43 @@ void Device::StartSessionButtonClicked(){
     //    sessionTimer->setInterval(5000);
 }
 void Device::ResetBattery(){
-
+    this->batteryLevel = 100;
+    this->batteryState = BatteryState::High;
+    emit this->deviceUpdated();
 }
 void Device::SessionComplete(){
 
 }
 
+void Device::pauseSession(){
+    // only works for singlshot (?)
+    this->remainingSessionTime = this->sessionTimer.remainingTime();
+    this->sessionTimer.stop();
+    this->state = State::Paused;
+    emit this->deviceUpdated();
+}
+
+void Device::resumeSession(){
+    // if there is a session to resume
+    if(remainingSessionTime > -1){
+        this->sessionTimer.setInterval(remainingSessionTime);
+        this->state = State::InSession;
+    }
+    // otherwise
+    else {
+        this->state = State::ChoosingSession; // maybe?
+    }
+    emit this->deviceUpdated();
+}
+
 void Device::DepleteBattery(){
     static int prevWholeLevel;
+    // these don't make sense because once the device is recharged theyre still false
+    static bool batteryLow = false;
+    static bool batteryCriticallyLow = false;
+
     prevWholeLevel = this->batteryLevel;
+
     switch(this->state){
         case State::ChoosingSession: case State::ChoosingSavedTherapy:
             this->batteryLevel -= 0.1;
@@ -90,7 +131,21 @@ void Device::DepleteBattery(){
             this->batteryLevel -= 0.05;
     }
 
-    // prevent the battery from requiring display update constantly
-    if(prevWholeLevel - (int)this->batteryLevel == 1)
+    // battery reaches 25% or lower
+    if(this->batteryLevel <= 25 && batteryState == BatteryState::High){
+        this->batteryState = BatteryState::Low;
         emit this->deviceUpdated();
+    }
+
+    // battery reaches 12% or lower
+    if(this->batteryLevel <= 12 && batteryState != BatteryState::CriticallyLow){
+        this->batteryState = BatteryState::CriticallyLow;
+        this->pauseSession();
+        emit this->deviceUpdated();
+    }
+
+    // only update the display when at least 1% is lost
+    if(prevWholeLevel - (int)this->batteryLevel >= 1 || this->batteryLevel <= 12){
+        emit this->deviceUpdated();
+    }
 }
