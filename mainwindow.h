@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <QVector>
+#include <QTimer>
 #include <QLabel>
 #include "device.h"
 
@@ -22,13 +23,16 @@ private:
     Ui::MainWindow *ui;
     Device* device;
     QVector<QLabel*> graph;
+    QTimer graphTimer;
 
     void setupGraph();
     void clearDisplay();
+    void displayBatteryInfo();
     void setGraph(int, int, bool = false);
+    void setGraphLights(int, int);
+    void graphBlink(int, int);
 
 private slots:
     void updateDisplay();
-
 };
 #endif // MAINWINDOW_H
