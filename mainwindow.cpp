@@ -10,6 +10,12 @@ MainWindow::MainWindow(Device* d, QWidget *parent)
     this->device = d;
     this->ui->batteryDisplay->display(d->getBatteryLevel());
 
+    //Icons
+    this->ui->intUpButton->setIcon(style.standardIcon(QStyle::SP_ArrowUp));
+    this->ui->intDownButton->setIcon(style.standardIcon(QStyle::SP_ArrowDown));
+    this->ui->checkMarkButton->setIcon(style.standardIcon(QStyle::SP_DialogApplyButton));
+    this->ui->checkMarkButton->setIconSize(QSize(40,40));
+
     // observe
     connect(d, SIGNAL(deviceUpdated()), this, SLOT(updateDisplay()));
 
