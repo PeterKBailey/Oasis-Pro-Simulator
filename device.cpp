@@ -1,7 +1,7 @@
 #include "device.h"
 
 Device::Device(QObject *parent) : QObject(parent),
-    batteryLevel(26), state(State::Off), remainingSessionTime(-1), selectedSessionGroup(0), selectedSessionType(0)
+    batteryLevel(26), activeWavelength("none"), intensity(1), state(State::Off), remainingSessionTime(-1), connectionStatus(ConnectionStatus::No), selectedSessionGroup(0), selectedSessionType(0)
 {
     // set up the powerButtonTimer, tell it not to repeat, tell it to stop after 1s
     this->powerButtonTimer.setSingleShot(true);
@@ -59,6 +59,21 @@ double Device::getBatteryLevel() const
     return batteryLevel;
 }
 
+ConnectionStatus Device::getConnectionStatus() const
+{
+    return connectionStatus;
+}
+
+int Device::getIntensity() const
+{
+    return intensity;
+}
+
+QString Device::getActiveWavelength() const
+{
+    return activeWavelength;
+}
+
 BatteryState Device::getBatteryState() const
 {
     return batteryState;
@@ -105,12 +120,20 @@ void Device::INTArrowButtonClicked(QAbstractButton* directionButton){
 }
 void Device::StartSessionButtonClicked(){
     //    sessionTimer->setInterval(5000);
-    qDebug() << "starting session...";
+    this->activeWavelength = sessionTypes[selectedSessionType]->wavelength;
+    enterTestMode();
+
 }
 void Device::ResetBattery(){
     this->batteryLevel = 100;
     this->batteryState = BatteryState::High;
     emit this->deviceUpdated();
+}
+
+void Device::SetConnectionStatus(int status)
+{
+    connectionStatus = status == 0 ? ConnectionStatus::No : status == 1 ? ConnectionStatus::Okay : ConnectionStatus::Excellent;
+    qDebug("connection: %d", connectionStatus);
 }
 void Device::SessionComplete(){
 
@@ -136,14 +159,6 @@ void Device::resumeSession(){
     }
     emit this->deviceUpdated();
 }
-
-//performs connection test at the start of each session
-void Device::enterTestMode()
-{
-    this->state = State::TestingConnection;
-    emit this->deviceUpdated();
-}
-
 
 void Device::DepleteBattery(){
     static int prevWholeLevel;
@@ -180,5 +195,31 @@ void Device::DepleteBattery(){
     // only update the display when at least 1% is lost
     if(prevWholeLevel - (int)this->batteryLevel >= 1 || this->batteryLevel <= 12){
         emit this->deviceUpdated();
+    }
+}
+
+void Device::startSession()
+{
+    this->state = State::InSession;
+    emit this->deviceUpdated();
+}
+
+//performs connection test at the start of each session
+void Device::enterTestMode()
+{
+    qDebug() << "testing connection...";
+    this->state = State::TestingConnection;
+    emit this->deviceUpdated();
+    QTimer::singleShot(5000, this, SLOT(confirmConnection()));//let the display show connection status for 5 seconds and then start session if there is a connection
+}
+
+//start session if there is a connection
+void Device::confirmConnection()
+{
+    if (connectionStatus != ConnectionStatus::No){
+        qDebug() << "connection confirmed, starting session...";
+        startSession();
+    } else {
+        qDebug() << "No connection. Waiting for connection to start session...";
     }
 }

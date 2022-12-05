@@ -4,8 +4,6 @@
 #include <QString>
 #include <QVector>
 
-
-
 struct SessionGroup {
     QString name;
     int durationMins;

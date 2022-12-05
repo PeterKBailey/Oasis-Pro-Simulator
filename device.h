@@ -12,6 +12,7 @@
 
 enum State {Off, ChoosingSession, ChoosingSavedTherapy, InSession, Paused, TestingConnection};
 enum BatteryState { High, Low, CriticallyLow };
+enum ConnectionStatus {No, Okay, Excellent};
 
 class Device : public QObject
 {
@@ -24,6 +25,11 @@ public:
     State getState() const;
     BatteryState getBatteryState() const;
     double getBatteryLevel() const;
+    ConnectionStatus getConnectionStatus() const;
+
+    int getIntensity() const;
+
+    QString getActiveWavelength() const;
 
 private:
     State state;
@@ -37,7 +43,9 @@ private:
     QTimer batteryLevelTimer;
     double batteryLevel;
 
+    QString activeWavelength;
     int intensity;
+    ConnectionStatus connectionStatus;
 
     // this is peter guessing at how this will work
     // highlighted / currently selected
@@ -54,6 +62,7 @@ private:
     void resumeSession();
     void enterTestMode();
     void configureDevice();
+    void startSession();
 
 public slots:
     void PowerButtonPressed();
@@ -61,11 +70,13 @@ public slots:
     void INTArrowButtonClicked(QAbstractButton*);
     void StartSessionButtonClicked();
     void ResetBattery();
+    void SetConnectionStatus(int);
 
 private slots:
     void SessionComplete(); // for session timer
     void PowerButtonHeld(); // for powerbutton timer
     void DepleteBattery(); // for battery timer
+    void confirmConnection();
 
 signals:
     void deviceUpdated();
