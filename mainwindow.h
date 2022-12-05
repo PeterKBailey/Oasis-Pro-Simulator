@@ -24,13 +24,17 @@ private:
     Device* device;
     QVector<QLabel*> graph;
     QTimer graphTimer;
+    QTimer wavelengthBlinkTimer;
 
     void setupGraph();
     void clearDisplay();
     void displayBatteryInfo();
-    void setGraph(int, int, bool = false);
-    void setGraphLights(int, int);
-    void graphBlink(int, int);
+    void setGraph(int, int, bool = false, QString = "black");
+    void setGraphLights(int, int, QString = "black");
+    void graphBlink(int, int, QString = "black");
+    void setDeviceButtonsEnabled(bool);
+    void setWavelength(QString, bool = false, QString = "black");
+    void wavelengthBlink(QString);
 
 private slots:
     void updateDisplay();
