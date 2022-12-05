@@ -85,10 +85,11 @@ void Device::powerOn(){
 }
 void Device::powerOff(bool softOff) {
     if(softOff){
-        // ?
+        // count intensity down to 0
     }
     this->state = State::Off;
     this->batteryLevelTimer.stop();
+    this->intensity = 0;
 }
 
 // SLOTS
@@ -119,7 +120,25 @@ void Device::PowerButtonHeld(){
 }
 
 void Device::INTArrowButtonClicked(QAbstractButton* directionButton){
+    QString buttonText = directionButton->objectName();
+    if(this->state == State::InSession){
+        if(QString::compare(buttonText,"intUpButton") == 0) {
+            adjustIntensity(1);
+        } else if(QString::compare(buttonText,"intDownButton") == 0) {
+            adjustIntensity(-1);
+        }
+        qDebug() << "intensity: " << intensity;
+        emit this->deviceUpdated();
+    }
 
+}
+
+void Device::adjustIntensity(int change) {
+    int newIntensity = intensity+change;
+
+    if(newIntensity >= 1 && newIntensity <=8) {
+        intensity+= change;
+    }
 }
 
 void Device::StartSessionButtonClicked(){

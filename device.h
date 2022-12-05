@@ -63,6 +63,7 @@ private:
     void enterTestMode();
     void configureDevice();
     void startSession();
+    void adjustIntensity(int);
 
 public slots:
     void PowerButtonPressed();
