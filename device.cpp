@@ -1,7 +1,7 @@
 #include "device.h"
 
 Device::Device(QObject *parent) : QObject(parent),
-    batteryLevel(26), activeWavelength("none"), intensity(1), state(State::Off), remainingSessionTime(-1), connectionStatus(ConnectionStatus::No), selectedSessionGroup(0), selectedSessionType(0)
+    batteryLevel(1), activeWavelength("none"), intensity(0), state(State::Off), remainingSessionTime(-1), connectionStatus(ConnectionStatus::No), selectedSessionGroup(0), selectedSessionType(0)
 {
     // set up the powerButtonTimer, tell it not to repeat, tell it to stop after 1s
     this->powerButtonTimer.setSingleShot(true);
@@ -99,15 +99,17 @@ void Device::PowerButtonPressed(){
     qDebug() << "power pressed\n";
 
 }
+
 // if they let it go before 1s, timer stops (i.e. clicked not held)
 void Device::PowerButtonReleased(){
     this->powerButtonTimer.stop();
     // depending on state do something (cycle through groups or whatever)
     qDebug() << "power released\n";
 }
+
 // else they didnt let it go within 1s, this happens
 void Device::PowerButtonHeld(){
-    if(this->state == State::Off){
+    if(this->state == State::Off && this->batteryLevel > 0){
         this->powerOn();
     } else {
         this->powerOff(false);
@@ -115,9 +117,11 @@ void Device::PowerButtonHeld(){
     qDebug() << "power held\n";
     emit this->deviceUpdated();
 }
+
 void Device::INTArrowButtonClicked(QAbstractButton* directionButton){
 
 }
+
 void Device::StartSessionButtonClicked(){
     //    sessionTimer->setInterval(5000);
     this->activeWavelength = sessionTypes[selectedSessionType]->wavelength;
@@ -162,21 +166,18 @@ void Device::resumeSession(){
 
 void Device::DepleteBattery(){
     static int prevWholeLevel;
-    // these don't make sense because once the device is recharged theyre still false
-    static bool batteryLow = false;
-    static bool batteryCriticallyLow = false;
-
     prevWholeLevel = this->batteryLevel;
 
     switch(this->state){
-        case State::ChoosingSession: case State::ChoosingSavedTherapy:
+        case State::ChoosingSession: case State::ChoosingSavedTherapy: case State::TestingConnection:
             this->batteryLevel -= 0.1;
             break;
         case State::InSession:
-            this->batteryLevel -= 0.2*this->intensity; // assuming intensity 1-8
+            this->batteryLevel -= 0.2 + 0.2*this->intensity; // assuming intensity 0 or 1-8
             break;
         case State::Paused:
             this->batteryLevel -= 0.05;
+            break;
     }
 
     // battery reaches 25% or lower
@@ -192,6 +193,10 @@ void Device::DepleteBattery(){
         emit this->deviceUpdated();
     }
 
+    // out of battery
+    if(this->batteryLevel <= 0){
+        this->powerOff(false);
+    }
     // only update the display when at least 1% is lost
     if(prevWholeLevel - (int)this->batteryLevel >= 1 || this->batteryLevel <= 12){
         emit this->deviceUpdated();

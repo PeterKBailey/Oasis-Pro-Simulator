@@ -36,7 +36,7 @@ private:
     BatteryState batteryState;
 
     QTimer sessionTimer;
-    int remainingSessionTime; // time, ms
+    int remainingSessionTime; // time left after pause, ms
 
     QTimer powerButtonTimer;
 
