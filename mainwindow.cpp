@@ -18,6 +18,8 @@ MainWindow::MainWindow(Device* d, QWidget *parent)
     connect(ui->intArrowButtonGroup, SIGNAL(buttonClicked(QAbstractButton*)), this->device, SLOT(INTArrowButtonClicked(QAbstractButton*)));
     connect(ui->checkMarkButton, SIGNAL(pressed()), this->device, SLOT(StartSessionButtonClicked()));
     connect(ui->replaceBatteryButton, SIGNAL(pressed()), this->device, SLOT(ResetBattery()));
+
+    clearDisplay();
 }
 
 void MainWindow::setupGraph(){
@@ -41,6 +43,7 @@ void MainWindow::updateDisplay(){
         this->clearDisplay();
         return;
     }
+    setDeviceButtonsEnabled(true);
     this->ui->powerButton->setStyleSheet("border: 5px solid green;");
     this->displayBatteryInfo();
 }
@@ -50,6 +53,19 @@ void MainWindow::clearDisplay(){
     this->ui->batteryDisplay->display(0);
     // turn off all the leds and stuff...
     this->setGraph(0,0);
+
+    //disable device buttons
+    setDeviceButtonsEnabled(false);
+
+}
+
+void MainWindow::setDeviceButtonsEnabled(bool flag)
+{
+    this->ui->checkMarkButton->setEnabled(flag);
+    this->ui->intUpButton->setEnabled(flag);
+    this->ui->intDownButton->setEnabled(flag);
+    this->ui->recordTherapyButton->setEnabled(flag);
+    this->ui->replayTherapyButton->setEnabled(flag);
 }
 
 void MainWindow::displayBatteryInfo(){
@@ -120,3 +136,5 @@ void MainWindow::graphBlink(int start, int end){
         this->graphTimer.stop();
     }
 }
+
+

@@ -1,7 +1,7 @@
 #include "device.h"
 
 Device::Device(QObject *parent) : QObject(parent),
-    batteryLevel(26), state(State::Off), remainingSessionTime(-1)
+    batteryLevel(26), state(State::Off), remainingSessionTime(-1), selectedSessionGroup(0), selectedSessionType(0)
 {
     // set up the powerButtonTimer, tell it not to repeat, tell it to stop after 1s
     this->powerButtonTimer.setSingleShot(true);
@@ -23,7 +23,31 @@ Device::Device(QObject *parent) : QObject(parent),
     else {
         this->batteryState = BatteryState::CriticallyLow;
     }
+
+    configureDevice();
 }
+
+Device::~Device()
+{
+    for (SessionGroup *group : sessionGroups) delete group;
+    for (SessionType *type : sessionTypes) delete type;
+}
+
+//Initialize session groups and types
+void Device::configureDevice()
+{
+    //Add all session groups
+    sessionGroups.append(new SessionGroup("20 Min", 20));
+    sessionGroups.append(new SessionGroup("45 Min", 45));
+    sessionGroups.append(new SessionGroup("User Designed", 0));
+
+    //Add all session types
+    sessionTypes.append(new SessionType("MET", "small"));
+    sessionTypes.append(new SessionType("Sub-Delta", "big"));
+    sessionTypes.append(new SessionType("Delta", "small"));
+    sessionTypes.append(new SessionType("Theta", "small"));
+}
+
 
 State Device::getState() const
 {
@@ -81,6 +105,7 @@ void Device::INTArrowButtonClicked(QAbstractButton* directionButton){
 }
 void Device::StartSessionButtonClicked(){
     //    sessionTimer->setInterval(5000);
+    qDebug() << "starting session...";
 }
 void Device::ResetBattery(){
     this->batteryLevel = 100;
@@ -111,6 +136,14 @@ void Device::resumeSession(){
     }
     emit this->deviceUpdated();
 }
+
+//performs connection test at the start of each session
+void Device::enterTestMode()
+{
+    this->state = State::TestingConnection;
+    emit this->deviceUpdated();
+}
+
 
 void Device::DepleteBattery(){
     static int prevWholeLevel;

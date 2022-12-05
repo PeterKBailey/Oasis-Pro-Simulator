@@ -6,10 +6,11 @@
 #include <QAbstractButton>
 #include <QTimer>
 #include <QDebug>
+#include <QVector>
 
 #include "defs.h"
 
-enum State {Off, ChoosingSession, ChoosingSavedTherapy, InSession, Paused};
+enum State {Off, ChoosingSession, ChoosingSavedTherapy, InSession, Paused, TestingConnection};
 enum BatteryState { High, Low, CriticallyLow };
 
 class Device : public QObject
@@ -17,6 +18,7 @@ class Device : public QObject
     Q_OBJECT
 public:
     explicit Device(QObject *parent = nullptr);
+    ~Device();
 
     // getters
     State getState() const;
@@ -43,13 +45,15 @@ private:
     int selectedSessionType; // (frequency) 0, 1, 2, 3
 
     // stored data of the groups and sessions we have, set up in ctor
-//    SessionGroup sessionGroups[3];
-//    SessionType sessionTypes[4];
+    QVector<SessionGroup*> sessionGroups;
+    QVector<SessionType*> sessionTypes;
 
     void powerOn();
     void powerOff(bool);
     void pauseSession();
     void resumeSession();
+    void enterTestMode();
+    void configureDevice();
 
 public slots:
     void PowerButtonPressed();

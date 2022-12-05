@@ -31,6 +31,7 @@ private:
     void setGraph(int, int, bool = false);
     void setGraphLights(int, int);
     void graphBlink(int, int);
+    void setDeviceButtonsEnabled(bool);
 
 private slots:
     void updateDisplay();
