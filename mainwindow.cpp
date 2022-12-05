@@ -8,6 +8,7 @@ MainWindow::MainWindow(Device* d, QWidget *parent)
     ui->setupUi(this);
     this->setupGraph();
     this->device = d;
+    this->ui->batteryDisplay->display(d->getBatteryLevel());
 
     // observe
     connect(d, SIGNAL(deviceUpdated()), this, SLOT(updateDisplay()));
@@ -39,6 +40,8 @@ MainWindow::~MainWindow()
 }
 
 void MainWindow::updateDisplay(){
+    this->displayBatteryInfo();
+
     auto state = device->getState();
     if(state == State::Off){
         this->clearDisplay();
@@ -68,12 +71,10 @@ void MainWindow::updateDisplay(){
 
     setDeviceButtonsEnabled(true);
     this->ui->powerButton->setStyleSheet("border: 5px solid green;");
-    this->displayBatteryInfo();
 }
 
 void MainWindow::clearDisplay(){
     this->ui->powerButton->setStyleSheet("");
-    this->ui->batteryDisplay->display(0);
     // turn off all the leds and stuff...
     this->setGraph(0,0);
 
@@ -105,12 +106,10 @@ void MainWindow::displayBatteryInfo(){
     if(newBatteryState != deviceBatteryState){
         deviceBatteryState = newBatteryState;
         if(newBatteryState == BatteryState::Low){
-            qDebug() << "low";
-            this->setGraph(1, 2, true, "#98ff98");
+            this->setGraph(1, 2, true, "yellow");
         }
         else if(newBatteryState == BatteryState::CriticallyLow){
-            qDebug() << "crit low";
-            this->setGraph(1, 1, true, "#98ff98");
+            this->setGraph(1, 1, true, "red");
         }
     }
 }
