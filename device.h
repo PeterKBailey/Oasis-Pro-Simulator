@@ -37,6 +37,8 @@ public:
 
     bool getToggleRecord() const;
 
+    QString getInputtedName() const;
+
 private:
     State state;
     BatteryState batteryState;
@@ -67,6 +69,7 @@ private:
 
     // Data Structure for recorded therapies saved by user
     QVector<Therapy*> recordedTherapies;
+    QString inputtedName;
 
     void powerOn();
     void powerOff();
@@ -76,7 +79,7 @@ private:
     void enterTestMode();
     void configureDevice();
     void startSession();
-    void recordTherapy();
+    void recordTherapy(QString);
     void adjustIntensity(int);
 
 public slots:

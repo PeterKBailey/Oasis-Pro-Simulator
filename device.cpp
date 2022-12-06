@@ -92,6 +92,11 @@ bool Device::getToggleRecord() const
     return toggleRecord;
 }
 
+QString Device::getInputtedName() const
+{
+    return inputtedName;
+}
+
 BatteryState Device::getBatteryState() const
 {
     return batteryState;
@@ -134,7 +139,7 @@ void Device::CesReduction() {
 void Device::PowerButtonPressed(){
     // timer starts
     this->powerButtonTimer.start();
-    qDebug() << "power pressed\n";
+    qDebug() << "power pressed";
 }
 
 // if they let it go before 1s, timer stops (i.e. clicked not held)
@@ -144,7 +149,7 @@ void Device::PowerButtonReleased(){
     if(this->state == State::InSession) { //And not held?
         softOff();
     }
-    qDebug() << "power released\n";
+    qDebug() << "power released";
 }
 
 // else they didnt let it go within 1s, this happens
@@ -300,7 +305,8 @@ void Device::confirmConnection()
 
 // SLOT for Input box for recording a therapy
 void Device::UsernameInputted(QString username){
-    qDebug() << "Username:" << username << " Length: " << username.length();
+    this->inputtedName = username;
+    // qDebug() << "Inputted Name: " << this->getInputtedName();
     if(username.length() == 0){
         this->toggleRecord = false;
     } else {
@@ -308,12 +314,21 @@ void Device::UsernameInputted(QString username){
     }
     emit this->deviceUpdated();
 }
+// SLOT for Record Button clicked
 void Device::RecordButtonClicked(){
-    qDebug() << "Record Therapy button clicked...";
-    // toggleRecord = true;
+    QString username = this->getInputtedName();
+    qDebug() << "Record Therapy button clicked... with username: " << username;
+    this->recordTherapy(username);
 }
 // Record Therapy Session (Save current session group, type, intensity and username to list of recorded therapies)
-void Device::recordTherapy()
+void Device::recordTherapy(QString username)
 {
-    // recordedTherapies.append(new Therapy(this->getSelectedSessionGroup(), this->getSelectedSessionType(), this->getIntensity(), ));
+    qDebug() << "In recordTherapy()...";
+
+    auto sessionGroup = this->sessionGroups[this->getSelectedSessionGroup()];
+    auto sessionType = this->sessionTypes[this->getSelectedSessionType()];
+
+    auto new_therapy = new Therapy(*sessionGroup, *sessionType, this->getIntensity(), username);
+    recordedTherapies.append(new_therapy);
+    qDebug() << "Recorded Therapies: " << recordedTherapies;
 }
