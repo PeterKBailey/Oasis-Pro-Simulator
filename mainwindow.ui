@@ -570,6 +570,13 @@
     </property>
     <layout class="QVBoxLayout" name="therapyLayout">
      <item>
+      <widget class="QLabel" name="treatmentHistoryLabel">
+       <property name="text">
+        <string>Recorded Treatment History:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QListWidget" name="treatmentHistoryList"/>
      </item>
      <item>
