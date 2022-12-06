@@ -97,8 +97,15 @@ void MainWindow::setDeviceButtonsEnabled(bool flag)
     this->ui->intUpButton->setEnabled(flag);
     this->ui->intDownButton->setEnabled(flag);
     this->ui->replayTherapyButton->setEnabled(flag);
-    this->ui->usernameInput->setEnabled(flag);
-    this->toggleRecordButton();
+
+    this->ui->usernameInput->setEnabled(false);
+    this->ui->recordTherapyButton->setEnabled(false);
+
+    auto state = device->getState();
+    if(state == State::InSession){
+        this->ui->usernameInput->setEnabled(true);
+        this->toggleRecordButton();
+    }
 }
 
 void MainWindow::displayBatteryInfo(){
