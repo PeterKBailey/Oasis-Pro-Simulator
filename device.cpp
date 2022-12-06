@@ -1,7 +1,7 @@
 #include "device.h"
 
 Device::Device(QObject *parent) : QObject(parent),
-    batteryLevel(1), activeWavelength("none"), intensity(0), state(State::Off), remainingSessionTime(-1), connectionStatus(ConnectionStatus::No), selectedSessionGroup(0), selectedSessionType(0)
+    batteryLevel(29), activeWavelength("none"), intensity(0), state(State::Off), remainingSessionTime(-1), connectionStatus(ConnectionStatus::No), selectedSessionGroup(0), selectedSessionType(0)
 {
     // set up the powerButtonTimer, tell it not to repeat, tell it to stop after 1s
     this->powerButtonTimer.setSingleShot(true);
@@ -82,6 +82,7 @@ BatteryState Device::getBatteryState() const
 void Device::powerOn(){
     this->state = State::ChoosingSession;
     this->batteryLevelTimer.start();
+    emit this->deviceUpdated();
 }
 void Device::powerOff(bool softOff) {
     if(softOff){
@@ -90,6 +91,7 @@ void Device::powerOff(bool softOff) {
     this->state = State::Off;
     this->batteryLevelTimer.stop();
     this->intensity = 0;
+    emit this->deviceUpdated();
 }
 
 // SLOTS
@@ -116,7 +118,6 @@ void Device::PowerButtonHeld(){
         this->powerOff(false);
     }
     qDebug() << "power held\n";
-    emit this->deviceUpdated();
 }
 
 void Device::INTArrowButtonClicked(QAbstractButton* directionButton){
@@ -145,11 +146,11 @@ void Device::StartSessionButtonClicked(){
     //    sessionTimer->setInterval(5000);
     this->activeWavelength = sessionTypes[selectedSessionType]->wavelength;
     enterTestMode();
-
 }
 void Device::ResetBattery(){
     this->batteryLevel = 100;
     this->batteryState = BatteryState::High;
+    this->resumeSession();
     emit this->deviceUpdated();
 }
 
@@ -171,6 +172,9 @@ void Device::pauseSession(){
 }
 
 void Device::resumeSession(){
+    if(this->batteryState == BatteryState::CriticallyLow){
+        return; // session can not be resumed with low battery
+    }
     // if there is a session to resume
     if(remainingSessionTime > -1){
         this->sessionTimer.setInterval(remainingSessionTime);
@@ -192,7 +196,7 @@ void Device::DepleteBattery(){
             this->batteryLevel -= 0.1;
             break;
         case State::InSession:
-            this->batteryLevel -= 0.2 + 0.2*this->intensity; // assuming intensity 0 or 1-8
+            this->batteryLevel -= 0.2 + 0.1*this->intensity; // assuming intensity 0 or 1-8
             break;
         case State::Paused:
             this->batteryLevel -= 0.05;
@@ -214,16 +218,21 @@ void Device::DepleteBattery(){
 
     // out of battery
     if(this->batteryLevel <= 0){
+        this->batteryLevel = 0;
         this->powerOff(false);
     }
+
     // only update the display when at least 1% is lost
-    if(prevWholeLevel - (int)this->batteryLevel >= 1 || this->batteryLevel <= 12){
+    if(prevWholeLevel - (int)this->batteryLevel >= 1){
         emit this->deviceUpdated();
     }
 }
 
 void Device::startSession()
 {
+    if(this->batteryState == BatteryState::CriticallyLow){
+        return; // session can not be started with low battery
+    }
     this->state = State::InSession;
     emit this->deviceUpdated();
 }

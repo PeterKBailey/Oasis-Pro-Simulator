@@ -71,11 +71,12 @@ void MainWindow::updateDisplay(){
         auto intensity = this->device->getIntensity();
         auto wavelength = this->device->getActiveWavelength();
         this->setWavelength(wavelength, false, "red");
-        this->setGraph(intensity, intensity, false, "green");
+        // if the graph is animating then don't overwrite with intensity
+        if(!this->graphTimer.isActive())
+            this->setGraph(intensity, intensity, false, "green");
     }
     //also need to call setWavelength() for other cases
-
-    setDeviceButtonsEnabled(true);
+    setDeviceButtonsEnabled(device->getBatteryState() != BatteryState::CriticallyLow);
     this->ui->powerButton->setStyleSheet("border: 5px solid green;");
 }
 
@@ -112,9 +113,11 @@ void MainWindow::displayBatteryInfo(){
     if(newBatteryState != deviceBatteryState){
         deviceBatteryState = newBatteryState;
         if(newBatteryState == BatteryState::Low){
+            qDebug() << "Battery Low";
             this->setGraph(1, 2, true, "yellow");
         }
         else if(newBatteryState == BatteryState::CriticallyLow){
+            qDebug() << "Battery Very Low";
             this->setGraph(1, 1, true, "red");
         }
     }
