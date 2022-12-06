@@ -69,9 +69,6 @@ void MainWindow::updateDisplay(){
     }
     //also need to call setWavelength() for other cases
 
-    // Enable/Disable Record Button based off text in username input box
-    this->toggleRecordButton();
-
     setDeviceButtonsEnabled(true);
     this->ui->powerButton->setStyleSheet("border: 5px solid green;");
     this->displayBatteryInfo();
@@ -98,14 +95,13 @@ void MainWindow::setDeviceButtonsEnabled(bool flag)
     this->ui->intDownButton->setEnabled(flag);
     this->ui->replayTherapyButton->setEnabled(flag);
 
-    this->ui->usernameInput->setEnabled(false);
-    this->ui->recordTherapyButton->setEnabled(false);
-
     auto state = device->getState();
     if(state == State::InSession){
         this->ui->usernameInput->setEnabled(true);
-        this->toggleRecordButton();
+    } else {
+        this->ui->usernameInput->setEnabled(false);
     }
+    this->toggleRecordButton();
 }
 
 void MainWindow::displayBatteryInfo(){
