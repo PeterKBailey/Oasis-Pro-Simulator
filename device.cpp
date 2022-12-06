@@ -1,7 +1,7 @@
 #include "device.h"
 
 Device::Device(QObject *parent) : QObject(parent),
-    batteryLevel(29), activeWavelength("none"), intensity(0), state(State::Off), remainingSessionTime(-1), connectionStatus(ConnectionStatus::No), selectedSessionGroup(0), selectedSessionType(0)
+    batteryLevel(29), activeWavelength("none"), intensity(0), state(State::Off), remainingSessionTime(-1), connectionStatus(ConnectionStatus::No), selectedSessionGroup(0), selectedSessionType(0), toggleRecord(false)
 {
     // set up the powerButtonTimer, tell it not to repeat, tell it to stop after 1s
     this->powerButtonTimer.setSingleShot(true);
@@ -77,6 +77,26 @@ QString Device::getActiveWavelength() const
     return activeWavelength;
 }
 
+int Device::getSelectedSessionGroup() const
+{
+    return selectedSessionGroup;
+}
+
+int Device::getSelectedSessionType() const
+{
+    return selectedSessionType;
+}
+
+bool Device::getToggleRecord() const
+{
+    return toggleRecord;
+}
+
+QString Device::getInputtedName() const
+{
+    return inputtedName;
+}
+
 BatteryState Device::getBatteryState() const
 {
     return batteryState;
@@ -119,7 +139,7 @@ void Device::CesReduction() {
 void Device::PowerButtonPressed(){
     // timer starts
     this->powerButtonTimer.start();
-    qDebug() << "power pressed\n";
+    qDebug() << "power pressed";
 }
 
 // if they let it go before 1s, timer stops (i.e. clicked not held)
@@ -129,7 +149,7 @@ void Device::PowerButtonReleased(){
     if(this->state == State::InSession) { //And not held?
         softOff();
     }
-    qDebug() << "power released\n";
+    qDebug() << "power released";
 }
 
 // else they didnt let it go within 1s, this happens
@@ -281,4 +301,36 @@ void Device::confirmConnection()
     } else {
         qDebug() << "No connection. Waiting for connection to start session...";
     }
+}
+
+// SLOT for Input box for recording a therapy
+void Device::UsernameInputted(QString username){
+    this->inputtedName = username;
+    // qDebug() << "Inputted Name: " << this->getInputtedName();
+    if(username.length() == 0){
+        this->toggleRecord = false;
+    } else {
+        this->toggleRecord = true;
+    }
+    emit this->deviceUpdated();
+}
+// SLOT for Record Button clicked
+void Device::RecordButtonClicked(){
+    QString username = this->getInputtedName();
+    qDebug() << "Record Therapy button clicked... with username: " << username;
+    this->recordTherapy(username);
+}
+// Record Therapy Session (Save current session group, type, intensity and username to list of recorded therapies)
+void Device::recordTherapy(QString username)
+{
+    qDebug() << "In recordTherapy()...";
+
+    auto sessionGroup = this->sessionGroups[this->getSelectedSessionGroup()];
+    auto sessionType = this->sessionTypes[this->getSelectedSessionType()];
+
+    auto new_therapy = new Therapy(*sessionGroup, *sessionType, this->getIntensity(), username);
+    qDebug() << "New Therapy: " << new_therapy->group.name << new_therapy->type.name << new_therapy->intensity << new_therapy->username;
+
+    recordedTherapies.append(new_therapy);
+    qDebug() << "Recorded Therapies: " << recordedTherapies;
 }

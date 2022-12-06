@@ -37,6 +37,7 @@ private:
     void setDeviceButtonsEnabled(bool);
     void setWavelength(QString, bool = false, QString = "black");
     void wavelengthBlink(QString);
+    void toggleRecordButton();
 
 private slots:
     void updateDisplay();
