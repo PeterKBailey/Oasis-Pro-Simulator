@@ -17,15 +17,9 @@ Device::Device(QObject *parent) : QObject(parent),
     //
     this->batteryLevelTimer.setInterval(2000);
     connect(&batteryLevelTimer, SIGNAL(timeout()), this, SLOT(DepleteBattery()));
-    if(this->batteryLevel > 25){
-        this->batteryState = BatteryState::High;
-    }
-    else if(this->batteryLevel > 12){
-        this->batteryState = BatteryState::Low;
-    }
-    else {
-        this->batteryState = BatteryState::CriticallyLow;
-    }
+
+    this->lowBatteryTriggered = false;
+    this->criticalBatteryTriggered = false;
 
     configureDevice();
 }
@@ -77,9 +71,19 @@ QString Device::getActiveWavelength() const
     return activeWavelength;
 }
 
-BatteryState Device::getBatteryState() const
+BatteryState Device::getBatteryState() {
+    if(this->batteryLevel <= 12){
+        return BatteryState::Critical;
+    }
+    else if(this->batteryLevel <= 25){
+        return BatteryState::Low;
+    }
+    return BatteryState::High;
+}
+
+bool Device::getRunBatteryAnimation() const
 {
-    return batteryState;
+    return runBatteryAnimation;
 }
 
 void Device::powerOn(){
@@ -93,6 +97,8 @@ void Device::powerOff() {
     this->batteryLevelTimer.stop();
     this->softOffTimer.stop();
     this->intensity = 0;
+    this->lowBatteryTriggered = false;
+    this->criticalBatteryTriggered = false;
     emit this->deviceUpdated();
 }
 
@@ -168,10 +174,23 @@ void Device::StartSessionButtonClicked(){
     this->activeWavelength = sessionTypes[selectedSessionType]->wavelength;
     enterTestMode();
 }
+
 void Device::ResetBattery(){
-    this->batteryLevel = 100;
-    this->batteryState = BatteryState::High;
-    this->resumeSession();
+    this->SetBattery(100);
+}
+void Device::SetBattery(int batteryLevel){
+    qDebug() << "Battery set to " << batteryLevel;
+    if(batteryLevel < 0 || batteryLevel > 100)
+        return;
+
+    this->batteryLevel = 1.0*batteryLevel;
+    // when battery is set, we'll replay low battery animations as needed
+    this->lowBatteryTriggered = false;
+    this->criticalBatteryTriggered = false;
+
+    if(this->state == State::Paused){
+        this->resumeSession();
+    }
     emit this->deviceUpdated();
 }
 
@@ -193,7 +212,7 @@ void Device::pauseSession(){
 }
 
 void Device::resumeSession(){
-    if(this->batteryState == BatteryState::CriticallyLow){
+    if(this->getBatteryState() == BatteryState::Critical){
         return; // session can not be resumed with low battery
     }
     // if there is a session to resume
@@ -224,34 +243,38 @@ void Device::DepleteBattery(){
             break;
     }
 
-    // battery reaches 25% or lower
-    if(this->batteryLevel <= 25 && batteryState == BatteryState::High){
-        this->batteryState = BatteryState::Low;
-        emit this->deviceUpdated();
-    }
+    BatteryState currentBatteryState = this->getBatteryState();
 
-    // battery reaches 12% or lower
-    if(this->batteryLevel <= 12 && batteryState != BatteryState::CriticallyLow){
-        this->batteryState = BatteryState::CriticallyLow;
-        this->pauseSession();
-        emit this->deviceUpdated();
-    }
-
-    // out of battery
+    // no battery, device powers off
     if(this->batteryLevel <= 0){
         this->batteryLevel = 0;
         this->powerOff();
     }
+    // battery is critical
+    else if(currentBatteryState == BatteryState::Critical && !criticalBatteryTriggered){
+        this->criticalBatteryTriggered = true;
+        this->runBatteryAnimation = true;
+        this->pauseSession();
+        this->runBatteryAnimation = false;
 
-    // only update the display when at least 1% is lost
-    if(prevWholeLevel - (int)this->batteryLevel >= 1){
+    }
+    // battery is low
+    else if(currentBatteryState == BatteryState::Low && !lowBatteryTriggered){
+        this->lowBatteryTriggered = true;
+        this->runBatteryAnimation = true;
+        emit this->deviceUpdated();
+        this->runBatteryAnimation = false;
+    }
+
+    // otherwise only update the display when at least 1% is lost
+    else if(prevWholeLevel - (int)this->batteryLevel >= 1){
         emit this->deviceUpdated();
     }
 }
 
 void Device::startSession()
 {
-    if(this->batteryState == BatteryState::CriticallyLow){
+    if(this->getBatteryState() == BatteryState::Critical){
         return; // session can not be started with low battery
     }
 

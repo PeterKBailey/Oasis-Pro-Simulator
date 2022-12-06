@@ -24,6 +24,7 @@ MainWindow::MainWindow(Device* d, QWidget *parent)
     connect(ui->powerButton, SIGNAL(released()), this->device, SLOT(PowerButtonReleased()));
     connect(ui->intArrowButtonGroup, SIGNAL(buttonClicked(QAbstractButton*)), this->device, SLOT(INTArrowButtonClicked(QAbstractButton*)));
     connect(ui->checkMarkButton, SIGNAL(pressed()), this->device, SLOT(StartSessionButtonClicked()));
+    connect(ui->batteryLevelSlider, SIGNAL(valueChanged(int)), this->device, SLOT(SetBattery(int)));
     connect(ui->replaceBatteryButton, SIGNAL(pressed()), this->device, SLOT(ResetBattery()));
     connect(ui->connectionStrengthSlider, SIGNAL(valueChanged(int)), this->device, SLOT(SetConnectionStatus(int)));
 
@@ -79,7 +80,7 @@ void MainWindow::updateDisplay(){
         this->setGraph(intensity, intensity, false, "green");
     }
     //also need to call setWavelength() for other cases
-    setDeviceButtonsEnabled(device->getBatteryState() != BatteryState::CriticallyLow);
+    setDeviceButtonsEnabled(device->getBatteryState() != BatteryState::Critical);
     this->ui->powerButton->setStyleSheet("border: 5px solid green;");
 }
 
@@ -106,21 +107,21 @@ void MainWindow::setDeviceButtonsEnabled(bool flag)
 }
 
 void MainWindow::displayBatteryInfo(){
-    static BatteryState deviceBatteryState = BatteryState::High;
-
-    // battery
-    auto newBatteryLevel = device->getBatteryLevel();
+    auto newBatteryLevel = (int)device->getBatteryLevel();
     BatteryState newBatteryState = device->getBatteryState();
 
-    this->ui->batteryDisplay->display((int)newBatteryLevel);
-    if(newBatteryState != deviceBatteryState){
-        deviceBatteryState = newBatteryState;
+    this->ui->batteryDisplay->display(newBatteryLevel);
+    this->ui->batteryLevelSlider->blockSignals(true);
+    this->ui->batteryLevelSlider->setValue(newBatteryLevel);
+    this->ui->batteryLevelSlider->blockSignals(false);
+
+    if(device->getRunBatteryAnimation()){
         if(newBatteryState == BatteryState::Low){
             qDebug() << "Battery Low";
             this->setGraph(1, 2, true, "yellow");
         }
-        else if(newBatteryState == BatteryState::CriticallyLow){
-            qDebug() << "Battery Very Low";
+        else if(newBatteryState == BatteryState::Critical){
+            qDebug() << "Battery Critically Low";
             this->setGraph(1, 1, true, "red");
         }
     }
@@ -164,6 +165,8 @@ void MainWindow::setGraph(int start, int end, bool blink, QString colour){
     // set the lights
     this->setGraphLights(start, end, colour);
     if(blink){
+        this->numGraphBlinks = 0;
+        this->isGraphBlinkOn = true;
         // graph timer can be applied to more than just blinking so disconnect other slots
         disconnect(&this->graphTimer, &QTimer::timeout, 0, 0);
         // qt signal slot using lambda expression to run graphBlink with the specified values
@@ -184,11 +187,8 @@ void MainWindow::setGraphLights(int start, int end, QString colour){
 }
 
 void MainWindow::graphBlink(int start, int end, QString colour){
-    static int numBlinks = 0;
-    static bool isOn = true;
-
     // if on, turn off
-    if(isOn){
+    if(this->isGraphBlinkOn){
         this->setGraphLights(0,0);
     }
     // if off, turn on
@@ -196,12 +196,12 @@ void MainWindow::graphBlink(int start, int end, QString colour){
         this->setGraphLights(start, end, colour);
     }
 
-    isOn = !isOn;
-    numBlinks++;
-    if(numBlinks == 5){
-        numBlinks = 0;
+    this->isGraphBlinkOn = !this->isGraphBlinkOn;
+    this->numGraphBlinks++;
+    if(this->numGraphBlinks == 5){
+        this->numGraphBlinks = 0;
         // by default blink assumes the lights are on and should be turned off
-        isOn = true;
+        this->isGraphBlinkOn = true;
         this->graphTimer.stop();
     }
 }

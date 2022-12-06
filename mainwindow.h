@@ -27,6 +27,8 @@ private:
     QTimer graphTimer;
     QTimer wavelengthBlinkTimer;
     QCommonStyle style;
+    int numGraphBlinks;
+    bool isGraphBlinkOn;
 
     void setupGraph();
     void clearDisplay();
