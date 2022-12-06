@@ -5,6 +5,7 @@
 #include <QVector>
 #include <QTimer>
 #include <QLabel>
+#include <QCommonStyle>
 #include "device.h"
 
 QT_BEGIN_NAMESPACE
@@ -25,6 +26,7 @@ private:
     QVector<QLabel*> graph;
     QTimer graphTimer;
     QTimer wavelengthBlinkTimer;
+    QCommonStyle style;
 
     void setupGraph();
     void clearDisplay();

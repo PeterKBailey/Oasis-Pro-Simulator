@@ -8,6 +8,13 @@ MainWindow::MainWindow(Device* d, QWidget *parent)
     ui->setupUi(this);
     this->setupGraph();
     this->device = d;
+    this->ui->batteryDisplay->display(d->getBatteryLevel());
+
+    //Icons
+    this->ui->intUpButton->setIcon(style.standardIcon(QStyle::SP_ArrowUp));
+    this->ui->intDownButton->setIcon(style.standardIcon(QStyle::SP_ArrowDown));
+    this->ui->checkMarkButton->setIcon(style.standardIcon(QStyle::SP_DialogApplyButton));
+    this->ui->checkMarkButton->setIconSize(QSize(40,40));
 
     // observe
     connect(d, SIGNAL(deviceUpdated()), this, SLOT(updateDisplay()));
@@ -42,6 +49,8 @@ MainWindow::~MainWindow()
 }
 
 void MainWindow::updateDisplay(){
+    this->displayBatteryInfo();
+
     auto state = device->getState();
     if(state == State::Off){
         this->clearDisplay();
@@ -65,18 +74,20 @@ void MainWindow::updateDisplay(){
         auto intensity = this->device->getIntensity();
         auto wavelength = this->device->getActiveWavelength();
         this->setWavelength(wavelength, false, "red");
+        // if the graph is animating then don't overwrite with intensity
+        if(!this->graphTimer.isActive())
+            this->setGraph(intensity, intensity, false, "green");
+    } else if(state == State::SoftOff) {
+        auto intensity = this->device->getIntensity();
         this->setGraph(intensity, intensity, false, "green");
     }
     //also need to call setWavelength() for other cases
-
-    setDeviceButtonsEnabled(true);
+    setDeviceButtonsEnabled(device->getBatteryState() != BatteryState::CriticallyLow);
     this->ui->powerButton->setStyleSheet("border: 5px solid green;");
-    this->displayBatteryInfo();
 }
 
 void MainWindow::clearDisplay(){
     this->ui->powerButton->setStyleSheet("");
-    this->ui->batteryDisplay->display(0);
     // turn off all the leds and stuff...
     this->setGraph(0,0);
 
@@ -115,12 +126,12 @@ void MainWindow::displayBatteryInfo(){
     if(newBatteryState != deviceBatteryState){
         deviceBatteryState = newBatteryState;
         if(newBatteryState == BatteryState::Low){
-            qDebug() << "low";
-            this->setGraph(1, 2, true, "#98ff98");
+            qDebug() << "Battery Low";
+            this->setGraph(1, 2, true, "yellow");
         }
         else if(newBatteryState == BatteryState::CriticallyLow){
-            qDebug() << "crit low";
-            this->setGraph(1, 1, true, "#98ff98");
+            qDebug() << "Battery Very Low";
+            this->setGraph(1, 1, true, "red");
         }
     }
 }

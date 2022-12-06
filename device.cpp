@@ -1,7 +1,7 @@
 #include "device.h"
 
 Device::Device(QObject *parent) : QObject(parent),
-    batteryLevel(26), activeWavelength("none"), intensity(1), state(State::Off), remainingSessionTime(-1), connectionStatus(ConnectionStatus::No), selectedSessionGroup(0), selectedSessionType(0), toggleRecord(false)
+    batteryLevel(29), activeWavelength("none"), intensity(0), state(State::Off), remainingSessionTime(-1), connectionStatus(ConnectionStatus::No), selectedSessionGroup(0), selectedSessionType(0), toggleRecord(false)
 {
     // set up the powerButtonTimer, tell it not to repeat, tell it to stop after 1s
     this->powerButtonTimer.setSingleShot(true);
@@ -9,7 +9,10 @@ Device::Device(QObject *parent) : QObject(parent),
     connect(&powerButtonTimer, SIGNAL(timeout()), this, SLOT(PowerButtonHeld()));
 
     this->sessionTimer.setSingleShot(true);
-    connect(&sessionTimer, SIGNAL(timeout()), this, SLOT(StartSessionButtonClicked()));
+    connect(&sessionTimer, SIGNAL(timeout()), this, SLOT(SessionComplete()));
+
+    this->softOffTimer.setInterval(1000);
+    connect(&softOffTimer, SIGNAL(timeout()), this, SLOT(CesReduction()));
 
     //
     this->batteryLevelTimer.setInterval(2000);
@@ -97,13 +100,33 @@ BatteryState Device::getBatteryState() const
 void Device::powerOn(){
     this->state = State::ChoosingSession;
     this->batteryLevelTimer.start();
+    emit this->deviceUpdated();
 }
-void Device::powerOff(bool softOff) {
-    if(softOff){
-        // ?
-    }
+void Device::powerOff() {
+    qDebug() << "Powering off";
     this->state = State::Off;
     this->batteryLevelTimer.stop();
+    this->softOffTimer.stop();
+    this->intensity = 0;
+    emit this->deviceUpdated();
+}
+
+void Device::softOff() {
+    qDebug() << "Soft Off initiated";
+
+    //if curr session not done, disable active session?
+
+    this->state = State::SoftOff;
+    softOffTimer.start();
+}
+
+void Device::CesReduction() {
+    adjustIntensity(-1);
+
+    if(intensity <= 1) {
+        softOffTimer.stop();
+        powerOff();
+    }
 }
 
 // SLOTS
@@ -112,36 +135,58 @@ void Device::PowerButtonPressed(){
     // timer starts
     this->powerButtonTimer.start();
     qDebug() << "power pressed\n";
-
 }
+
 // if they let it go before 1s, timer stops (i.e. clicked not held)
 void Device::PowerButtonReleased(){
     this->powerButtonTimer.stop();
     // depending on state do something (cycle through groups or whatever)
+    if(this->state == State::InSession) { //And not held?
+        softOff();
+    }
     qDebug() << "power released\n";
 }
+
 // else they didnt let it go within 1s, this happens
 void Device::PowerButtonHeld(){
-    if(this->state == State::Off){
+    if(this->state == State::Off && this->batteryLevel > 0){
         this->powerOn();
     } else {
-        this->powerOff(false);
+        this->powerOff();
     }
     qDebug() << "power held\n";
-    emit this->deviceUpdated();
 }
+
 void Device::INTArrowButtonClicked(QAbstractButton* directionButton){
+    QString buttonText = directionButton->objectName();
+    if(this->state == State::InSession){
+        if(QString::compare(buttonText,"intUpButton") == 0) {
+            adjustIntensity(1);
+        } else if(QString::compare(buttonText,"intDownButton") == 0) {
+            adjustIntensity(-1);
+        }
+        qDebug() << "intensity: " << intensity;
+    }
 
 }
+
+void Device::adjustIntensity(int change) {
+    int newIntensity = intensity+change;
+
+    if(newIntensity >= 1 && newIntensity <=8) {
+        intensity+= change;
+        emit this->deviceUpdated();
+    }
+}
+
 void Device::StartSessionButtonClicked(){
-    //    sessionTimer->setInterval(5000);
     this->activeWavelength = sessionTypes[selectedSessionType]->wavelength;
     enterTestMode();
-
 }
 void Device::ResetBattery(){
     this->batteryLevel = 100;
     this->batteryState = BatteryState::High;
+    this->resumeSession();
     emit this->deviceUpdated();
 }
 
@@ -151,7 +196,7 @@ void Device::SetConnectionStatus(int status)
     qDebug("connection: %d", connectionStatus);
 }
 void Device::SessionComplete(){
-
+    softOff();
 }
 
 void Device::pauseSession(){
@@ -163,6 +208,9 @@ void Device::pauseSession(){
 }
 
 void Device::resumeSession(){
+    if(this->batteryState == BatteryState::CriticallyLow){
+        return; // session can not be resumed with low battery
+    }
     // if there is a session to resume
     if(remainingSessionTime > -1){
         this->sessionTimer.setInterval(remainingSessionTime);
@@ -177,21 +225,18 @@ void Device::resumeSession(){
 
 void Device::DepleteBattery(){
     static int prevWholeLevel;
-    // these don't make sense because once the device is recharged theyre still false
-    static bool batteryLow = false;
-    static bool batteryCriticallyLow = false;
-
     prevWholeLevel = this->batteryLevel;
 
     switch(this->state){
-        case State::ChoosingSession: case State::ChoosingSavedTherapy:
+        case State::ChoosingSession: case State::ChoosingSavedTherapy: case State::TestingConnection:
             this->batteryLevel -= 0.1;
             break;
         case State::InSession:
-            this->batteryLevel -= 0.2*this->intensity; // assuming intensity 1-8
+            this->batteryLevel -= 0.2 + 0.1*this->intensity; // assuming intensity 0 or 1-8
             break;
         case State::Paused:
             this->batteryLevel -= 0.05;
+            break;
     }
 
     // battery reaches 25% or lower
@@ -207,14 +252,28 @@ void Device::DepleteBattery(){
         emit this->deviceUpdated();
     }
 
+    // out of battery
+    if(this->batteryLevel <= 0){
+        this->batteryLevel = 0;
+        this->powerOff();
+    }
+
     // only update the display when at least 1% is lost
-    if(prevWholeLevel - (int)this->batteryLevel >= 1 || this->batteryLevel <= 12){
+    if(prevWholeLevel - (int)this->batteryLevel >= 1){
         emit this->deviceUpdated();
     }
 }
 
 void Device::startSession()
 {
+    if(this->batteryState == BatteryState::CriticallyLow){
+        return; // session can not be started with low battery
+    }
+
+    //Test session time
+    //sessionTimer.setInterval(5000);
+    //sessionTimer.start();
+
     this->state = State::InSession;
     emit this->deviceUpdated();
 }
