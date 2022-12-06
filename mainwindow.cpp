@@ -74,6 +74,9 @@ void MainWindow::updateDisplay(){
         // if the graph is animating then don't overwrite with intensity
         if(!this->graphTimer.isActive())
             this->setGraph(intensity, intensity, false, "green");
+    } else if(state == State::SoftOff) {
+        auto intensity = this->device->getIntensity();
+        this->setGraph(intensity, intensity, false, "green");
     }
     //also need to call setWavelength() for other cases
     setDeviceButtonsEnabled(device->getBatteryState() != BatteryState::CriticallyLow);

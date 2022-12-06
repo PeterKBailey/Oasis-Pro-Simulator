@@ -10,7 +10,7 @@
 
 #include "defs.h"
 
-enum State {Off, ChoosingSession, ChoosingSavedTherapy, InSession, Paused, TestingConnection};
+enum State {Off, ChoosingSession, ChoosingSavedTherapy, InSession, Paused, TestingConnection, SoftOff};
 enum BatteryState { High, Low, CriticallyLow };
 enum ConnectionStatus {No, Okay, Excellent};
 
@@ -35,6 +35,8 @@ private:
     State state;
     BatteryState batteryState;
 
+    QTimer softOffTimer;
+
     QTimer sessionTimer;
     int remainingSessionTime; // time left after pause, ms
 
@@ -57,7 +59,8 @@ private:
     QVector<SessionType*> sessionTypes;
 
     void powerOn();
-    void powerOff(bool);
+    void powerOff();
+    void softOff();
     void pauseSession();
     void resumeSession();
     void enterTestMode();
@@ -68,6 +71,7 @@ private:
 public slots:
     void PowerButtonPressed();
     void PowerButtonReleased();
+    void CesReduction();
     void INTArrowButtonClicked(QAbstractButton*);
     void StartSessionButtonClicked();
     void ResetBattery();
