@@ -11,7 +11,7 @@
 #include "defs.h"
 
 enum State {Off, ChoosingSession, ChoosingSavedTherapy, InSession, Paused, TestingConnection, SoftOff};
-enum BatteryState { High, Low, CriticallyLow };
+enum BatteryState {High, Low, Critical};
 enum ConnectionStatus {No, Okay, Excellent};
 
 class Device : public QObject
@@ -23,25 +23,21 @@ public:
 
     // getters
     State getState() const;
-    BatteryState getBatteryState() const;
     double getBatteryLevel() const;
     ConnectionStatus getConnectionStatus() const;
-
     int getIntensity() const;
-
     QString getActiveWavelength() const;
-
+    bool getRunBatteryAnimation() const;
     int getSelectedSessionGroup() const;
-
     int getSelectedSessionType() const;
-
     bool getToggleRecord() const;
-
     QString getInputtedName() const;
+
+    // pseudo-getter
+    BatteryState getBatteryState();
 
 private:
     State state;
-    BatteryState batteryState;
     bool toggleRecord;
 
     QTimer softOffTimer;
@@ -53,6 +49,9 @@ private:
 
     QTimer batteryLevelTimer;
     double batteryLevel;
+    bool lowBatteryTriggered;
+    bool criticalBatteryTriggered;
+    bool runBatteryAnimation;
 
     QString activeWavelength;
     int intensity;
@@ -88,6 +87,7 @@ public slots:
     void CesReduction();
     void INTArrowButtonClicked(QAbstractButton*);
     void StartSessionButtonClicked();
+    void SetBattery(int);
     void ResetBattery();
     void SetConnectionStatus(int);
     void UsernameInputted(QString);
