@@ -20,6 +20,9 @@ MainWindow::MainWindow(Device* d, QWidget *parent)
     connect(ui->replaceBatteryButton, SIGNAL(pressed()), this->device, SLOT(ResetBattery()));
     connect(ui->connectionStrengthSlider, SIGNAL(valueChanged(int)), this->device, SLOT(SetConnectionStatus(int)));
 
+    connect(ui->usernameInput, SIGNAL(textEdited(QString)), this->device, SLOT(UsernameInputted(QString)));
+    connect(ui->recordTherapyButton, SIGNAL(pressed()), this->device, SLOT(RecordButtonClicked()));
+
     clearDisplay();
 }
 
@@ -66,6 +69,9 @@ void MainWindow::updateDisplay(){
     }
     //also need to call setWavelength() for other cases
 
+    // Enable/Disable Record Button based off text in username input box
+    this->toggleRecordButton();
+
     setDeviceButtonsEnabled(true);
     this->ui->powerButton->setStyleSheet("border: 5px solid green;");
     this->displayBatteryInfo();
@@ -90,8 +96,9 @@ void MainWindow::setDeviceButtonsEnabled(bool flag)
     this->ui->checkMarkButton->setEnabled(flag);
     this->ui->intUpButton->setEnabled(flag);
     this->ui->intDownButton->setEnabled(flag);
-    this->ui->recordTherapyButton->setEnabled(flag);
     this->ui->replayTherapyButton->setEnabled(flag);
+    this->ui->usernameInput->setEnabled(flag);
+    this->toggleRecordButton();
 }
 
 void MainWindow::displayBatteryInfo(){
@@ -195,4 +202,12 @@ void MainWindow::graphBlink(int start, int end, QString colour){
     }
 }
 
-
+void MainWindow::toggleRecordButton(){
+    // Record Button only visible when there is valid text in the username input box
+    auto toggleRecord = device->getToggleRecord();
+    if(toggleRecord == true){
+        this->ui->recordTherapyButton->setEnabled(toggleRecord);
+    } else {
+        this->ui->recordTherapyButton->setEnabled(toggleRecord);
+    }
+}

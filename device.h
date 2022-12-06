@@ -31,9 +31,16 @@ public:
 
     QString getActiveWavelength() const;
 
+    int getSelectedSessionGroup() const;
+
+    int getSelectedSessionType() const;
+
+    bool getToggleRecord() const;
+
 private:
     State state;
     BatteryState batteryState;
+    bool toggleRecord;
 
     QTimer sessionTimer;
     int remainingSessionTime; // time, ms
@@ -56,6 +63,9 @@ private:
     QVector<SessionGroup*> sessionGroups;
     QVector<SessionType*> sessionTypes;
 
+    // Data Structure for recorded therapies saved by user
+    QVector<Therapy*> recordedTherapies;
+
     void powerOn();
     void powerOff(bool);
     void pauseSession();
@@ -63,6 +73,7 @@ private:
     void enterTestMode();
     void configureDevice();
     void startSession();
+    void recordTherapy();
 
 public slots:
     void PowerButtonPressed();
@@ -71,6 +82,8 @@ public slots:
     void StartSessionButtonClicked();
     void ResetBattery();
     void SetConnectionStatus(int);
+    void UsernameInputted(QString);
+    void RecordButtonClicked();
 
 private slots:
     void SessionComplete(); // for session timer

@@ -1,7 +1,7 @@
 #include "device.h"
 
 Device::Device(QObject *parent) : QObject(parent),
-    batteryLevel(26), activeWavelength("none"), intensity(1), state(State::Off), remainingSessionTime(-1), connectionStatus(ConnectionStatus::No), selectedSessionGroup(0), selectedSessionType(0)
+    batteryLevel(26), activeWavelength("none"), intensity(1), state(State::Off), remainingSessionTime(-1), connectionStatus(ConnectionStatus::No), selectedSessionGroup(0), selectedSessionType(0), toggleRecord(false)
 {
     // set up the powerButtonTimer, tell it not to repeat, tell it to stop after 1s
     this->powerButtonTimer.setSingleShot(true);
@@ -72,6 +72,21 @@ int Device::getIntensity() const
 QString Device::getActiveWavelength() const
 {
     return activeWavelength;
+}
+
+int Device::getSelectedSessionGroup() const
+{
+    return selectedSessionGroup;
+}
+
+int Device::getSelectedSessionType() const
+{
+    return selectedSessionType;
+}
+
+bool Device::getToggleRecord() const
+{
+    return toggleRecord;
 }
 
 BatteryState Device::getBatteryState() const
@@ -222,4 +237,24 @@ void Device::confirmConnection()
     } else {
         qDebug() << "No connection. Waiting for connection to start session...";
     }
+}
+
+// SLOT for Input box for recording a therapy
+void Device::UsernameInputted(QString username){
+    qDebug() << "Username:" << username << " Length: " << username.length();
+    if(username.length() == 0){
+        this->toggleRecord = false;
+    } else {
+        this->toggleRecord = true;
+    }
+    emit this->deviceUpdated();
+}
+void Device::RecordButtonClicked(){
+    qDebug() << "Record Therapy button clicked...";
+    // toggleRecord = true;
+}
+// Record Therapy Session (Save current session group, type, intensity and username to list of recorded therapies)
+void Device::recordTherapy()
+{
+    // recordedTherapies.append(new Therapy(this->getSelectedSessionGroup(), this->getSelectedSessionType(), this->getIntensity(), ));
 }
