@@ -329,6 +329,8 @@ void Device::recordTherapy(QString username)
     auto sessionType = this->sessionTypes[this->getSelectedSessionType()];
 
     auto new_therapy = new Therapy(*sessionGroup, *sessionType, this->getIntensity(), username);
+    qDebug() << "New Therapy: " << new_therapy->group.name << new_therapy->type.name << new_therapy->intensity << new_therapy->username;
+
     recordedTherapies.append(new_therapy);
     qDebug() << "Recorded Therapies: " << recordedTherapies;
 }

@@ -69,7 +69,7 @@ private:
 
     // Data Structure for recorded therapies saved by user
     QVector<Therapy*> recordedTherapies;
-    QString inputtedName;
+    QString inputtedName; // Holds the text value in the username textbox
 
     void powerOn();
     void powerOff();
