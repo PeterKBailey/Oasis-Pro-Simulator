@@ -124,30 +124,44 @@ void Device::powerOn(){
 void Device::powerOff() {
     qDebug() << "Powering off";
     this->state = State::Off;
-    this->batteryLevelTimer.stop();
-    this->softOffTimer.stop();
+    stopAllTimers();
     this->intensity = 0;
     this->lowBatteryTriggered = false;
     this->criticalBatteryTriggered = false;
+    this->selectedSessionGroup = 0;
+    this->selectedSessionType = 0;
+    this->selectedRecordedTherapy = 0;
+    this->inputtedName = "";
+    this->activeWavelength = "none";
+    this->remainingSessionTime = -1;
+    this->toggleRecord = false;
     emit this->deviceUpdated();
+}
+
+void Device::stopAllTimers() {
+    this->batteryLevelTimer.stop();
+    this->softOffTimer.stop();
+    this->sessionTimer.stop();
+    this->powerButtonTimer.stop();
 }
 
 void Device::softOff() {
     qDebug() << "Soft Off initiated";
 
     //if curr session not done, disable active session?
+    this->sessionTimer.stop();
 
     this->state = State::SoftOff;
     softOffTimer.start();
 }
 
 void Device::CesReduction() {
-    adjustIntensity(-1);
-
     if(intensity <= 1) {
         softOffTimer.stop();
         powerOff();
     }
+
+    adjustIntensity(-1);
 }
 
 // SLOTS
@@ -162,7 +176,7 @@ void Device::PowerButtonPressed(){
 void Device::PowerButtonReleased(){
     this->powerButtonTimer.stop();
     // depending on state do something (cycle through groups or whatever)
-    if(this->state == State::InSession) { //And not held?
+    if(this->state == State::InSession) {
         softOff();
     }
     qDebug() << "power released";
@@ -175,7 +189,7 @@ void Device::PowerButtonHeld(){
     } else {
         this->powerOff();
     }
-    qDebug() << "power held\n";
+    qDebug() << "power held";
 }
 
 void Device::INTArrowButtonClicked(QAbstractButton* directionButton){
@@ -186,7 +200,6 @@ void Device::INTArrowButtonClicked(QAbstractButton* directionButton){
         } else if(QString::compare(buttonText,"intDownButton") == 0) {
             adjustIntensity(-1);
         }
-        qDebug() << "intensity: " << intensity;
     }
     else if(this->state == State::ChoosingSavedTherapy){
         // the QListWidget indexes 0 at the top, so clicking down needs to increase index
@@ -206,6 +219,9 @@ void Device::adjustIntensity(int change) {
         intensity+= change;
         emit this->deviceUpdated();
     }
+
+    qDebug() << "intensity: " << intensity;
+
 }
 
 void Device::adjustSelectedRecordedTherapy(int change) {
@@ -340,12 +356,12 @@ void Device::DepleteBattery(){
 
 void Device::startSession()
 {
-    if(this->getBatteryState() == BatteryState::Critical){
+    if(this->getBatteryState() == BatteryState::Critical) {
         return; // session can not be started with low battery
     }
 
     //Test session time
-    //sessionTimer.setInterval(5000);
+    //sessionTimer.setInterval(10000);
     //sessionTimer.start();
 
     this->state = State::InSession;
@@ -364,6 +380,10 @@ void Device::enterTestMode()
 //start session if there is a connection
 void Device::confirmConnection()
 {
+    if(this->state != State::TestingConnection) {
+        return;
+    }
+
     if (connectionStatus != ConnectionStatus::No){
         qDebug() << "connection confirmed, starting session...";
         startSession();

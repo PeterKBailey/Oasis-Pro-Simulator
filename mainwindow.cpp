@@ -57,6 +57,7 @@ void MainWindow::updateDisplay(){
 
     this->ui->replayTherapyButton->setEnabled(state == State::ChoosingSession && device->getRecordedTherapies().count() > 0);
     if(state == State::Off){
+        stopAllTimers();
         this->clearDisplay();
         return;
     }
@@ -100,6 +101,11 @@ void MainWindow::updateDisplay(){
     setDeviceButtonsEnabled(device->getBatteryState() != BatteryState::Critical);
     this->ui->powerButton->setStyleSheet("border: 5px solid green;");
     displayRecordedSessions();
+}
+
+void MainWindow::stopAllTimers() {
+    graphTimer.stop();
+    wavelengthBlinkTimer.stop();
 }
 
 void MainWindow::clearDisplay(){
