@@ -78,6 +78,8 @@ void MainWindow::updateDisplay(){
         this->setWavelength(wavelength, true, "red");
     }
     else if (state == State::InSession){
+        this->toggleRecordButton();
+
         auto intensity = this->device->getIntensity();
         auto wavelength = this->device->getActiveWavelength();
         this->setWavelength(wavelength, false, "red");
@@ -131,14 +133,7 @@ void MainWindow::setDeviceButtonsEnabled(bool flag)
     this->ui->checkMarkButton->setEnabled(flag);
     this->ui->intUpButton->setEnabled(flag);
     this->ui->intDownButton->setEnabled(flag);
-
-    auto state = device->getState();
-    //if(state == State::InSession || state == State::ChoosingSession || state == State::Paused){
-    if(state == State::InSession){
-        this->ui->usernameInput->setEnabled(true);
-    } else {
-        this->ui->usernameInput->setEnabled(false);
-    }
+    this->ui->usernameInput->setEnabled(flag);
     this->toggleRecordButton();
 }
 
@@ -245,7 +240,12 @@ void MainWindow::graphBlink(int start, int end, QString colour){
 void MainWindow::toggleRecordButton(){
     // Record Button only visible when there is valid text in the username input box
     auto toggleRecord = device->getToggleRecord();
-    this->ui->recordTherapyButton->setEnabled(toggleRecord);
+    if(device->getState() == State::InSession){
+        this->ui->recordTherapyButton->setEnabled(toggleRecord);
+    } else {
+        // If device not in session state then ever show the record therapy button
+        this->ui->recordTherapyButton->setEnabled(false);
+    }
 }
 
 void MainWindow::displayRecordedSessions(){
