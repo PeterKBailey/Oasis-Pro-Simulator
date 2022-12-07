@@ -30,6 +30,7 @@ MainWindow::MainWindow(Device* d, QWidget *parent)
 
     connect(ui->usernameInput, SIGNAL(textEdited(QString)), this->device, SLOT(UsernameInputted(QString)));
     connect(ui->recordTherapyButton, SIGNAL(pressed()), this->device, SLOT(RecordButtonClicked()));
+    connect(ui->replayTherapyButton, SIGNAL(pressed()), this->device, SLOT(ReplayButtonClicked()));
 
     clearDisplay();
 }
@@ -53,10 +54,13 @@ void MainWindow::updateDisplay(){
     this->displayBatteryInfo();
 
     auto state = device->getState();
+
+    this->ui->replayTherapyButton->setEnabled(state == State::ChoosingSession && device->getRecordedTherapies().count() > 0);
     if(state == State::Off){
         this->clearDisplay();
         return;
-    } else if (state == State::TestingConnection){
+    }
+    else if (state == State::TestingConnection){
         auto status = this->device->getConnectionStatus();
         switch(status){
             case ConnectionStatus::No:
@@ -71,17 +75,27 @@ void MainWindow::updateDisplay(){
         }
         auto wavelength = this->device->getActiveWavelength();
         this->setWavelength(wavelength, true, "red");
-    } else if (state == State::InSession){
+    }
+    else if (state == State::InSession){
         auto intensity = this->device->getIntensity();
         auto wavelength = this->device->getActiveWavelength();
         this->setWavelength(wavelength, false, "red");
         // if the graph is animating then don't overwrite with intensity
         if(!this->graphTimer.isActive())
             this->setGraph(intensity, intensity, false, "green");
-    } else if(state == State::SoftOff) {
+    }
+    else if(state == State::SoftOff) {
         auto intensity = this->device->getIntensity();
         this->setGraph(intensity, intensity, false, "green");
     }
+    else if(state == State::ChoosingSession){
+
+    }
+    else if(state == State::ChoosingSavedTherapy){
+        this->ui->treatmentHistoryList->setCurrentRow(device->getSelectedRecordedTherapy());
+
+    }
+
     //also need to call setWavelength() for other cases
     setDeviceButtonsEnabled(device->getBatteryState() != BatteryState::Critical);
     this->ui->powerButton->setStyleSheet("border: 5px solid green;");
@@ -90,7 +104,13 @@ void MainWindow::updateDisplay(){
 
 void MainWindow::clearDisplay(){
     this->ui->powerButton->setStyleSheet("");
-    // turn off all the leds and stuff...
+
+    // clear recorded therapy items
+//    this->ui->treatmentHistoryList->clearSelection();
+    this->ui->treatmentHistoryList->clear();
+    this->ui->usernameInput->clear();
+
+    // turn off graph
     this->setGraph(0,0);
 
     // turn off CES mode wavelengths
@@ -98,7 +118,6 @@ void MainWindow::clearDisplay(){
 
     //disable device buttons
     setDeviceButtonsEnabled(false);
-
 }
 
 void MainWindow::setDeviceButtonsEnabled(bool flag)
@@ -106,7 +125,6 @@ void MainWindow::setDeviceButtonsEnabled(bool flag)
     this->ui->checkMarkButton->setEnabled(flag);
     this->ui->intUpButton->setEnabled(flag);
     this->ui->intDownButton->setEnabled(flag);
-    this->ui->replayTherapyButton->setEnabled(flag);
 
     auto state = device->getState();
     //if(state == State::InSession || state == State::ChoosingSession || state == State::Paused){
@@ -225,17 +243,19 @@ void MainWindow::toggleRecordButton(){
 }
 
 void MainWindow::displayRecordedSessions(){
-//    if (device->getRecordedTherapies().length() < this->ui->treatmentHistoryList->count()){
-    ui->treatmentHistoryList->clear();
-   // }
-    int widgetLength = ui->treatmentHistoryList->count();
-    auto list = device->getRecordedTherapies();
-    int listLength = list.length();
-    for (int i = 0; i<list.length(); ++i){
-         QListWidgetItem* item = new QListWidgetItem;
-         item->setText("Username: " + list[i]->username + " Group: " + list[i]->group.name + " Type: " + list[i]->type.name + " Intensity: " + QString::number(list[i]->intensity));
-         item->setData(Qt::UserRole, QString::number(i));
-         ui->treatmentHistoryList->addItem(item);
+    // only update treatment list when necessary
+    if (device->getRecordedTherapies().length() > this->ui->treatmentHistoryList->count()){
+        ui->treatmentHistoryList->clear();
+
+        int widgetLength = ui->treatmentHistoryList->count();
+        auto list = device->getRecordedTherapies();
+        int listLength = list.length();
+        for (int i = 0; i<list.length(); ++i){
+             QListWidgetItem* item = new QListWidgetItem;
+             item->setText("Username: " + list[i]->username + " Group: " + list[i]->group.name + " Type: " + list[i]->type.name + " Intensity: " + QString::number(list[i]->intensity));
+             item->setData(Qt::UserRole, QString::number(i));
+             ui->treatmentHistoryList->addItem(item);
+        }
     }
 }
 

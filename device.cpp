@@ -1,7 +1,7 @@
 #include "device.h"
 
 Device::Device(QObject *parent) : QObject(parent),
-    batteryLevel(29), activeWavelength("none"), intensity(0), state(State::Off), remainingSessionTime(-1), connectionStatus(ConnectionStatus::No), selectedSessionGroup(0), selectedSessionType(0), toggleRecord(false)
+    batteryLevel(29), activeWavelength("none"), intensity(0), state(State::Off), remainingSessionTime(-1), connectionStatus(ConnectionStatus::No), selectedSessionGroup(0), selectedSessionType(0), selectedRecordedTherapy(0), toggleRecord(false)
 {
     // set up the powerButtonTimer, tell it not to repeat, tell it to stop after 1s
     this->powerButtonTimer.setSingleShot(true);
@@ -84,6 +84,11 @@ BatteryState Device::getBatteryState() {
 QVector<Therapy *> Device::getRecordedTherapies() const
 {
     return recordedTherapies;
+}
+
+int Device::getSelectedRecordedTherapy() const
+{
+    return selectedRecordedTherapy;
 }
 
 bool Device::getRunBatteryAnimation() const
@@ -184,10 +189,11 @@ void Device::INTArrowButtonClicked(QAbstractButton* directionButton){
         qDebug() << "intensity: " << intensity;
     }
     else if(this->state == State::ChoosingSavedTherapy){
+        // the QListWidget indexes 0 at the top, so clicking down needs to increase index
         if(QString::compare(buttonText,"intUpButton") == 0) {
-            adjustIntensity(1);
+            adjustSelectedRecordedTherapy(-1);
         } else if(QString::compare(buttonText,"intDownButton") == 0) {
-            adjustIntensity(-1);
+            adjustSelectedRecordedTherapy(1);
         }
     }
 
@@ -202,7 +208,35 @@ void Device::adjustIntensity(int change) {
     }
 }
 
+void Device::adjustSelectedRecordedTherapy(int change) {
+    int newSelection = this->selectedRecordedTherapy+change;
+
+    if(newSelection > -1 && newSelection < this->recordedTherapies.size()) {
+        this->selectedRecordedTherapy = newSelection;
+        emit this->deviceUpdated();
+    }
+}
+
 void Device::StartSessionButtonClicked(){
+    // if we are starting a session from a saved therapy
+    if(this->state == State::ChoosingSavedTherapy){
+        auto chosenTherapy = this->recordedTherapies[this->selectedRecordedTherapy];
+        for(int i = 0; i < sessionGroups.size(); ++i){
+            if(chosenTherapy->group.name == sessionGroups[i]->name){
+                this->selectedSessionGroup = i;
+                qDebug() << "Setting session group to " << sessionGroups[i]->name;
+                break;
+            }
+        }
+        for(int i = 0; i < sessionTypes.size(); ++i){
+            if(chosenTherapy->type.name == sessionTypes[i]->name){
+                this->selectedSessionType = i;
+                qDebug() << "Setting session type to " << sessionTypes[i]->name;
+                break;
+            }
+        }
+        this->intensity = chosenTherapy->intensity;
+    }
     this->activeWavelength = sessionTypes[selectedSessionType]->wavelength;
     enterTestMode();
 }
@@ -355,6 +389,13 @@ void Device::RecordButtonClicked(){
     qDebug() << "Record Therapy button clicked... with username: " << username;
     this->recordTherapy(username);
 }
+
+void Device::ReplayButtonClicked(){
+    qDebug() << "Replay Therapy button clicked... setting state";
+    this->state = State::ChoosingSavedTherapy;
+    emit this->deviceUpdated();
+}
+
 // Record Therapy Session (Save current session group, type, intensity and username to list of recorded therapies)
 void Device::recordTherapy(QString username)
 {

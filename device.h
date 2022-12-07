@@ -39,6 +39,8 @@ public:
 
     QVector<Therapy *> getRecordedTherapies() const;
 
+    int getSelectedRecordedTherapy() const;
+
 private:
     State state;
     bool toggleRecord;
@@ -70,6 +72,7 @@ private:
     QVector<SessionType*> sessionTypes;
 
     // Data Structure for recorded therapies saved by user
+    int selectedRecordedTherapy;
     QVector<Therapy*> recordedTherapies;
     QString inputtedName; // Holds the text value in the username textbox
 
@@ -83,6 +86,7 @@ private:
     void startSession();
     void recordTherapy(QString);
     void adjustIntensity(int);
+    void adjustSelectedRecordedTherapy(int);
     void replayTherapy(QListWidgetItem*);
 
 public slots:
@@ -96,6 +100,7 @@ public slots:
     void SetConnectionStatus(int);
     void UsernameInputted(QString);
     void RecordButtonClicked();
+    void ReplayButtonClicked();
 
 private slots:
     void SessionComplete(); // for session timer
