@@ -8,7 +8,7 @@ MainWindow::MainWindow(Device* d, QWidget *parent)
     ui->setupUi(this);
     this->setupGraph();
     this->device = d;
-    this->ui->batteryDisplay->display(d->getBatteryLevel());
+    this->displayBatteryInfo();
 
     //Icons
     this->ui->intUpButton->setIcon(style.standardIcon(QStyle::SP_ArrowUp));
