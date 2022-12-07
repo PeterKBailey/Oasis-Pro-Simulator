@@ -81,6 +81,11 @@ BatteryState Device::getBatteryState() {
     return BatteryState::High;
 }
 
+QVector<Therapy *> Device::getRecordedTherapies() const
+{
+    return recordedTherapies;
+}
+
 bool Device::getRunBatteryAnimation() const
 {
     return runBatteryAnimation;
@@ -177,6 +182,13 @@ void Device::INTArrowButtonClicked(QAbstractButton* directionButton){
             adjustIntensity(-1);
         }
         qDebug() << "intensity: " << intensity;
+    }
+    else if(this->state == State::ChoosingSavedTherapy){
+        if(QString::compare(buttonText,"intUpButton") == 0) {
+            adjustIntensity(1);
+        } else if(QString::compare(buttonText,"intDownButton") == 0) {
+            adjustIntensity(-1);
+        }
     }
 
 }
@@ -351,9 +363,32 @@ void Device::recordTherapy(QString username)
     auto sessionGroup = this->sessionGroups[this->getSelectedSessionGroup()];
     auto sessionType = this->sessionTypes[this->getSelectedSessionType()];
 
-    auto new_therapy = new Therapy(*sessionGroup, *sessionType, this->getIntensity(), username);
-    qDebug() << "New Therapy: " << new_therapy->group.name << new_therapy->type.name << new_therapy->intensity << new_therapy->username;
-
-    recordedTherapies.append(new_therapy);
+    bool flag = true;
+    for (int i = 0; i < recordedTherapies.length(); ++i){
+        qDebug() << i;
+        qDebug() << recordedTherapies;
+        if (recordedTherapies[i]->username == username && recordedTherapies[i]->group.name == sessionGroup->name && recordedTherapies[i]->type.name == sessionType->name && recordedTherapies[i]->intensity == this->getIntensity()){
+            qDebug() << "THE SAME";
+            flag = false;
+            break;
+        }
+    }
+    qDebug() << flag;
+    if (flag == true){
+        auto new_therapy = new Therapy(*sessionGroup, *sessionType, this->getIntensity(), username);
+        qDebug() << "New Therapy: " << new_therapy->group.name << new_therapy->type.name << new_therapy->intensity << new_therapy->username;
+        recordedTherapies.append(new_therapy);
+    }
     qDebug() << "Recorded Therapies: " << recordedTherapies;
+    emit this->deviceUpdated();
 }
+
+//void Device::replayTherapy(QListWidgetItem* therapy){
+//    selectedSessionGroup = therapy->group;
+//    selectedSessionType = therapy->type;
+//    this->intensity = therapy->intensity;
+//    qDebug() << "Replaying Therapy: Session Group: " + selectedSessionGroup + " Session Type: selectedSessionType" + selectedSessionType + " Intensity: " + this->intensity;
+//    //StartSessionButtonClicked();
+//    startSession();
+//    emit this->deviceUpdated();
+//}
