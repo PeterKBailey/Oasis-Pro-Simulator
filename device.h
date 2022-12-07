@@ -78,6 +78,7 @@ private:
 
     void powerOn();
     void powerOff();
+    void stopAllTimers();
     void softOff();
     void pauseSession();
     void resumeSession();

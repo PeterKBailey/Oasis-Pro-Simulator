@@ -31,6 +31,7 @@ private:
     bool isGraphBlinkOn;
 
     void setupGraph();
+    void stopAllTimers();
     void clearDisplay();
     void displayBatteryInfo();
     void setGraph(int, int, bool = false, QString = "black");
