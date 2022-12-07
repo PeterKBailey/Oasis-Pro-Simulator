@@ -1,7 +1,7 @@
 #include "device.h"
 
 Device::Device(QObject *parent) : QObject(parent),
-    batteryLevel(29), activeWavelength("none"), intensity(0), state(State::Off), remainingSessionTime(-1), connectionStatus(ConnectionStatus::No), selectedSessionGroup(0), selectedSessionType(0), selectedRecordedTherapy(0), toggleRecord(false)
+    batteryLevel(23), runBatteryAnimation(false), activeWavelength("none"), intensity(0), state(State::Off), remainingSessionTime(-1), connectionStatus(ConnectionStatus::No), selectedSessionGroup(0), selectedSessionType(0), selectedRecordedTherapy(0), toggleRecord(false)
 {
     // set up the powerButtonTimer, tell it not to repeat, tell it to stop after 1s
     this->powerButtonTimer.setSingleShot(true);
