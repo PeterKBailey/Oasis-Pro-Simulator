@@ -85,6 +85,7 @@ void MainWindow::updateDisplay(){
     //also need to call setWavelength() for other cases
     setDeviceButtonsEnabled(device->getBatteryState() != BatteryState::Critical);
     this->ui->powerButton->setStyleSheet("border: 5px solid green;");
+    displayRecordedSessions();
 }
 
 void MainWindow::clearDisplay(){
@@ -108,6 +109,7 @@ void MainWindow::setDeviceButtonsEnabled(bool flag)
     this->ui->replayTherapyButton->setEnabled(flag);
 
     auto state = device->getState();
+    //if(state == State::InSession || state == State::ChoosingSession || state == State::Paused){
     if(state == State::InSession){
         this->ui->usernameInput->setEnabled(true);
     } else {
@@ -219,9 +221,27 @@ void MainWindow::graphBlink(int start, int end, QString colour){
 void MainWindow::toggleRecordButton(){
     // Record Button only visible when there is valid text in the username input box
     auto toggleRecord = device->getToggleRecord();
-    if(toggleRecord == true){
-        this->ui->recordTherapyButton->setEnabled(toggleRecord);
-    } else {
-        this->ui->recordTherapyButton->setEnabled(toggleRecord);
+    this->ui->recordTherapyButton->setEnabled(toggleRecord);
+}
+
+void MainWindow::displayRecordedSessions(){
+//    if (device->getRecordedTherapies().length() < this->ui->treatmentHistoryList->count()){
+    ui->treatmentHistoryList->clear();
+   // }
+    int widgetLength = ui->treatmentHistoryList->count();
+    auto list = device->getRecordedTherapies();
+    int listLength = list.length();
+    for (int i = 0; i<list.length(); ++i){
+         QListWidgetItem* item = new QListWidgetItem;
+         item->setText("Username: " + list[i]->username + " Group: " + list[i]->group.name + " Type: " + list[i]->type.name + " Intensity: " + QString::number(list[i]->intensity));
+         item->setData(Qt::UserRole, QString::number(i));
+         ui->treatmentHistoryList->addItem(item);
     }
+}
+
+void MainWindow::toggleReplayButton(){
+    // Record Button only visible when there is valid text in the username input box
+    auto toggleRecord = device->getToggleRecord();
+    this->ui->replayTherapyButton->setEnabled(true);
+
 }

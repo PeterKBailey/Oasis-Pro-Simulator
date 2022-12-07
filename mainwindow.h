@@ -40,6 +40,8 @@ private:
     void setWavelength(QString, bool = false, QString = "black");
     void wavelengthBlink(QString);
     void toggleRecordButton();
+    void displayRecordedSessions();
+    void toggleReplayButton();
 
 private slots:
     void updateDisplay();

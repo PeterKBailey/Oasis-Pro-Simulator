@@ -7,6 +7,7 @@
 #include <QTimer>
 #include <QDebug>
 #include <QVector>
+#include <QListWidgetItem>
 
 #include "defs.h"
 
@@ -35,6 +36,8 @@ public:
 
     // pseudo-getter
     BatteryState getBatteryState();
+
+    QVector<Therapy *> getRecordedTherapies() const;
 
 private:
     State state;
@@ -80,6 +83,7 @@ private:
     void startSession();
     void recordTherapy(QString);
     void adjustIntensity(int);
+    void replayTherapy(QListWidgetItem*);
 
 public slots:
     void PowerButtonPressed();
