@@ -577,7 +577,14 @@
       </widget>
      </item>
      <item>
-      <widget class="QListWidget" name="treatmentHistoryList"/>
+      <widget class="QListWidget" name="treatmentHistoryList">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="cursor" stdset="0">
+        <cursorShape>ArrowCursor</cursorShape>
+       </property>
+      </widget>
      </item>
      <item>
       <layout class="QFormLayout" name="usernameLayout">
@@ -610,6 +617,9 @@
        </item>
        <item>
         <widget class="QPushButton" name="replayTherapyButton">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
            <horstretch>0</horstretch>
