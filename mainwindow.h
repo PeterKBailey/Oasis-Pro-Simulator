@@ -43,6 +43,7 @@ private:
     void toggleRecordButton();
     void displayRecordedSessions();
     void toggleReplayButton();
+    void highlightSession();
 
 private slots:
     void updateDisplay();

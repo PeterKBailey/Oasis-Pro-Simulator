@@ -101,6 +101,7 @@ void MainWindow::updateDisplay(){
     setDeviceButtonsEnabled(device->getBatteryState() != BatteryState::Critical);
     this->ui->powerButton->setStyleSheet("border: 5px solid green;");
     displayRecordedSessions();
+    highlightSession();
 }
 
 void MainWindow::stopAllTimers() {
@@ -124,6 +125,14 @@ void MainWindow::clearDisplay(){
 
     //disable device buttons
     setDeviceButtonsEnabled(false);
+
+//    ui->sessionGroupIcon1->setStyleSheet("");
+//    ui->sessionGroupIcon2->setStyleSheet("");
+//    ui->sessionGroupIcon3->setStyleSheet("");
+//    ui->sessionTypeIcon1->setStyleSheet("");
+//    ui->sessionTypeIcon2->setStyleSheet("");
+//    ui->sessionTypeIcon3->setStyleSheet("");
+//    ui->sessionTypeIcon4->setStyleSheet("");
 }
 
 void MainWindow::setDeviceButtonsEnabled(bool flag)
@@ -270,4 +279,38 @@ void MainWindow::toggleReplayButton(){
     auto toggleRecord = device->getToggleRecord();
     this->ui->replayTherapyButton->setEnabled(true);
 
+}
+
+void MainWindow::highlightSession(){
+    ui->sessionGroupIcon1->setStyleSheet("");
+    ui->sessionGroupIcon2->setStyleSheet("");
+    ui->sessionGroupIcon3->setStyleSheet("");
+    ui->sessionTypeIcon1->setStyleSheet("");
+    ui->sessionTypeIcon2->setStyleSheet("");
+    ui->sessionTypeIcon3->setStyleSheet("");
+    ui->sessionTypeIcon4->setStyleSheet("");
+    auto currSessionType = this->device->getSelectedSessionType();
+    auto currSessionGroup = this->device->getSelectedSessionGroup();
+
+    if (currSessionGroup == 0){
+        ui->sessionGroupIcon1->setStyleSheet("background-color: green;");
+    }
+    else if (currSessionGroup == 1){
+        ui->sessionGroupIcon2->setStyleSheet("background-color: green;");
+    }
+    else if (currSessionGroup == 2){
+        ui->sessionGroupIcon3->setStyleSheet("background-color: green;");
+    }
+    if (currSessionType == 0){
+        ui->sessionTypeIcon1->setStyleSheet("background-color: green;");
+    }
+    else if (currSessionType == 1){
+        ui->sessionTypeIcon2->setStyleSheet("background-color: green;");
+    }
+    else if (currSessionType == 2){
+        ui->sessionTypeIcon3->setStyleSheet("background-color: green;");
+    }
+    else if (currSessionType == 3){
+        ui->sessionTypeIcon4->setStyleSheet("background-color: green;");
+    }
 }
