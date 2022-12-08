@@ -38,5 +38,6 @@ private:
 
 private slots:
     void updateDisplay();
+    void updateWavelength();
 };
 #endif // MAINWINDOW_H

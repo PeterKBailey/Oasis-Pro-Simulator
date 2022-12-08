@@ -11,6 +11,7 @@ MainWindow::MainWindow(Device* d, QWidget *parent)
 
     // observe
     connect(d, SIGNAL(deviceUpdated()), this, SLOT(updateDisplay()));
+    connect(d, SIGNAL(endConnectionTest()), this, SLOT(updateWavelength()));
 
     // setup ui
     connect(ui->powerButton, SIGNAL(pressed()), this->device, SLOT(PowerButtonPressed()));
@@ -145,6 +146,11 @@ void MainWindow::wavelengthBlink(QString wavelength)
     }
 
     isWavelengthOn = !isWavelengthOn;
+}
+
+void MainWindow::updateWavelength()
+{
+    this->wavelengthBlinkTimer.stop();
 }
 
 void MainWindow::setGraph(int start, int end, bool blink, QString colour){

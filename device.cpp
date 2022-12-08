@@ -132,8 +132,14 @@ void Device::ResetBattery(){
 
 void Device::SetConnectionStatus(int status)
 {
-    connectionStatus = status == 0 ? ConnectionStatus::No : status == 1 ? ConnectionStatus::Okay : ConnectionStatus::Excellent;
-    qDebug("connection: %d", connectionStatus);
+    auto prevStatus = this->connectionStatus;
+    this->connectionStatus = status == 0 ? ConnectionStatus::No : status == 1 ? ConnectionStatus::Okay : ConnectionStatus::Excellent;
+    if (state == State::TestingConnection && prevStatus == ConnectionStatus::No){
+        this->confirmConnection();
+    } else if (state == State::InSession && connectionStatus == ConnectionStatus::No){
+        //disconnected during session
+        this->pauseSession();
+    }
 }
 void Device::SessionComplete(){
 
@@ -217,6 +223,7 @@ void Device::enterTestMode()
 void Device::confirmConnection()
 {
     if (connectionStatus != ConnectionStatus::No){
+        emit this->endConnectionTest();
         qDebug() << "connection confirmed, starting session...";
         startSession();
     } else {
