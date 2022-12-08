@@ -34,7 +34,8 @@ public:
     bool getToggleRecord() const;
     QString getInputtedName() const;
 
-    // pseudo-getter
+    // pseudo-getters
+    int getRemainingSessionTime();
     BatteryState getBatteryState();
 
     QVector<Therapy *> getRecordedTherapies() const;
