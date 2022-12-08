@@ -160,6 +160,10 @@ void Device::PowerButtonPressed(){
 
 // if they let it go before 1s, timer stops (i.e. clicked not held)
 void Device::PowerButtonReleased(){
+    qDebug() << "power released";
+    if(powerButtonTimer.remainingTime() <= 0){
+        return;
+    }
     this->powerButtonTimer.stop();
     // depending on state do something (cycle through groups or whatever)
     if(this->state == State::InSession) { //And not held?
@@ -174,7 +178,6 @@ void Device::PowerButtonReleased(){
         }
         qDebug() << "UPDATED SESSION Group: " << sessionGroups[this->selectedSessionGroup]->name;
     }
-    qDebug() << "power released";
     emit this->deviceUpdated();
 }
 
