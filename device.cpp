@@ -165,7 +165,17 @@ void Device::PowerButtonReleased(){
     if(this->state == State::InSession) { //And not held?
         softOff();
     }
+    else if (this->state == State::ChoosingSession){
+        if (this->selectedSessionGroup == 2){
+            this->selectedSessionGroup = 0;
+        }
+        else{
+            this->selectedSessionGroup++;
+        }
+        qDebug() << "UPDATED SESSION Group: " << sessionGroups[this->selectedSessionGroup]->name;
+    }
     qDebug() << "power released";
+    emit this->deviceUpdated();
 }
 
 // else they didnt let it go within 1s, this happens
@@ -196,7 +206,25 @@ void Device::INTArrowButtonClicked(QAbstractButton* directionButton){
             adjustSelectedRecordedTherapy(1);
         }
     }
-
+    else if (this->state == State::ChoosingSession){
+        if(QString::compare(buttonText,"intUpButton") == 0) {
+            if (this->selectedSessionType == 3){
+                this->selectedSessionType = 0;
+            }
+            else{
+                this->selectedSessionType++;
+            }
+        } else if(QString::compare(buttonText,"intDownButton") == 0) {
+            if (this->selectedSessionType == 0){
+                this->selectedSessionType = 3;
+            }
+            else{
+                this->selectedSessionType--;
+            }
+        }
+        qDebug() << "UPDATED SESSION TYPE: " << sessionTypes[this->selectedSessionType]->name;
+    }
+    emit this->deviceUpdated();
 }
 
 void Device::adjustIntensity(int change) {
@@ -423,12 +451,3 @@ void Device::recordTherapy(QString username)
     emit this->deviceUpdated();
 }
 
-//void Device::replayTherapy(QListWidgetItem* therapy){
-//    selectedSessionGroup = therapy->group;
-//    selectedSessionType = therapy->type;
-//    this->intensity = therapy->intensity;
-//    qDebug() << "Replaying Therapy: Session Group: " + selectedSessionGroup + " Session Type: selectedSessionType" + selectedSessionType + " Intensity: " + this->intensity;
-//    //StartSessionButtonClicked();
-//    startSession();
-//    emit this->deviceUpdated();
-//}
