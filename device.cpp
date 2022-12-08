@@ -81,6 +81,10 @@ BatteryState Device::getBatteryState() {
     return BatteryState::High;
 }
 
+int Device::getRemainingSessionTime(){
+    return this->sessionTimer.remainingTime();
+}
+
 QVector<Therapy *> Device::getRecordedTherapies() const
 {
     return recordedTherapies;
@@ -385,13 +389,13 @@ void Device::DepleteBattery(){
 
 void Device::startSession()
 {
-    if(this->getBatteryState() == BatteryState::Critical){
-        return; // session can not be started with low battery
+    // session can not be started with low battery or invalid values
+    if(this->getBatteryState() == BatteryState::Critical || this->selectedSessionGroup < 0 || this->selectedSessionType < 0){
+        return;
     }
 
-    //Test session time
-    //sessionTimer.setInterval(10000);
-    //sessionTimer.start();
+    sessionTimer.setInterval(this->sessionGroups[this->selectedSessionGroup]->durationMins*1000);
+    sessionTimer.start();
 
     this->state = State::InSession;
     emit this->deviceUpdated();

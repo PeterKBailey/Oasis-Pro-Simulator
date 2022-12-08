@@ -19,6 +19,10 @@ MainWindow::MainWindow(Device* d, QWidget *parent)
     // observe
     connect(d, SIGNAL(deviceUpdated()), this, SLOT(updateDisplay()));
 
+    // session timer timer
+    this->sessionTimerChecker.setInterval(1000);
+    connect(&this->sessionTimerChecker, SIGNAL(timeout()), this, SLOT(displaySessionTime()));
+
     // setup ui
     connect(ui->powerButton, SIGNAL(pressed()), this->device, SLOT(PowerButtonPressed()));
     connect(ui->powerButton, SIGNAL(released()), this->device, SLOT(PowerButtonReleased()));
@@ -52,6 +56,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::updateDisplay(){
     this->displayBatteryInfo();
+    this->displaySessionTime();
 
     auto state = device->getState();
 
@@ -78,6 +83,7 @@ void MainWindow::updateDisplay(){
         this->setWavelength(wavelength, true, "red");
     }
     else if (state == State::InSession){
+        this->sessionTimerChecker.start();
         auto intensity = this->device->getIntensity();
         auto wavelength = this->device->getActiveWavelength();
         this->setWavelength(wavelength, false, "red");
@@ -304,3 +310,14 @@ void MainWindow::unHighlightSession(){
         sessionTypeParent->itemAt(i)->widget()->setStyleSheet("");
     }
 }
+
+void MainWindow::displaySessionTime(){
+    int remainingTime = this->device->getRemainingSessionTime();
+    if (remainingTime < 0) {
+        this->sessionTimerChecker.stop();
+        return;
+    }
+    this->ui->therapyTime->display(remainingTime/1000);
+}
+
+

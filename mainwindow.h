@@ -26,6 +26,8 @@ private:
     QVector<QLabel*> graph;
     QTimer graphTimer;
     QTimer wavelengthBlinkTimer;
+    QTimer sessionTimerChecker;
+
     QCommonStyle style;
     int numGraphBlinks;
     bool isGraphBlinkOn;
@@ -48,5 +50,7 @@ private:
 
 private slots:
     void updateDisplay();
+    void displaySessionTime();
+
 };
 #endif // MAINWINDOW_H
