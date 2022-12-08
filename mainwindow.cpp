@@ -126,13 +126,7 @@ void MainWindow::clearDisplay(){
     //disable device buttons
     setDeviceButtonsEnabled(false);
 
-//    ui->sessionGroupIcon1->setStyleSheet("");
-//    ui->sessionGroupIcon2->setStyleSheet("");
-//    ui->sessionGroupIcon3->setStyleSheet("");
-//    ui->sessionTypeIcon1->setStyleSheet("");
-//    ui->sessionTypeIcon2->setStyleSheet("");
-//    ui->sessionTypeIcon3->setStyleSheet("");
-//    ui->sessionTypeIcon4->setStyleSheet("");
+    unHighlightSession();
 }
 
 void MainWindow::setDeviceButtonsEnabled(bool flag)
@@ -285,13 +279,7 @@ void MainWindow::toggleReplayButton(){
 }
 
 void MainWindow::highlightSession(){
-    ui->sessionGroupIcon1->setStyleSheet("");
-    ui->sessionGroupIcon2->setStyleSheet("");
-    ui->sessionGroupIcon3->setStyleSheet("");
-    ui->sessionTypeIcon1->setStyleSheet("");
-    ui->sessionTypeIcon2->setStyleSheet("");
-    ui->sessionTypeIcon3->setStyleSheet("");
-    ui->sessionTypeIcon4->setStyleSheet("");
+    unHighlightSession();
     auto currSessionType = this->device->getSelectedSessionType();
     auto currSessionGroup = this->device->getSelectedSessionGroup();
 
@@ -316,4 +304,13 @@ void MainWindow::highlightSession(){
     else if (currSessionType == 3){
         ui->sessionTypeIcon4->setStyleSheet("background-color: green;");
     }
+}
+void MainWindow::unHighlightSession(){
+    ui->sessionGroupIcon1->setStyleSheet("");
+    ui->sessionGroupIcon2->setStyleSheet("");
+    ui->sessionGroupIcon3->setStyleSheet("");
+    ui->sessionTypeIcon1->setStyleSheet("");
+    ui->sessionTypeIcon2->setStyleSheet("");
+    ui->sessionTypeIcon3->setStyleSheet("");
+    ui->sessionTypeIcon4->setStyleSheet("");
 }
