@@ -1,7 +1,7 @@
 #include "device.h"
 
 Device::Device(QObject *parent) : QObject(parent),
-    batteryLevel(29), activeWavelength("none"), intensity(0), state(State::Off), remainingSessionTime(-1), connectionStatus(ConnectionStatus::No), selectedSessionGroup(0), selectedSessionType(0), selectedRecordedTherapy(0), toggleRecord(false)
+    batteryLevel(29), runBatteryAnimation(false), activeWavelength("none"), intensity(0), state(State::Off), remainingSessionTime(-1), connectionStatus(ConnectionStatus::No), selectedSessionGroup(0), selectedSessionType(0), selectedRecordedTherapy(0), toggleRecord(false)
 {
     // set up the powerButtonTimer, tell it not to repeat, tell it to stop after 1s
     this->powerButtonTimer.setSingleShot(true);
@@ -124,30 +124,43 @@ void Device::powerOn(){
 void Device::powerOff() {
     qDebug() << "Powering off";
     this->state = State::Off;
-    this->batteryLevelTimer.stop();
-    this->softOffTimer.stop();
+
+    stopAllTimers();
+
     this->intensity = 0;
     this->lowBatteryTriggered = false;
     this->criticalBatteryTriggered = false;
+    this->selectedSessionGroup = 0;
+    this->selectedSessionType = 0;
+    this->selectedRecordedTherapy = 0;
+    this->inputtedName = "";
+    this->activeWavelength = "none";
+    this->remainingSessionTime = -1;
+    this->toggleRecord = false;
     emit this->deviceUpdated();
+}
+
+void Device::stopAllTimers() {
+    this->batteryLevelTimer.stop();
+    this->softOffTimer.stop();
+    this->sessionTimer.stop();
+    this->powerButtonTimer.stop();
 }
 
 void Device::softOff() {
     qDebug() << "Soft Off initiated";
-
-    //if curr session not done, disable active session?
+    this->sessionTimer.stop();
 
     this->state = State::SoftOff;
     softOffTimer.start();
 }
 
 void Device::CesReduction() {
-    adjustIntensity(-1);
-
     if(intensity <= 1) {
         softOffTimer.stop();
         powerOff();
     }
+    adjustIntensity(-1);
 }
 
 // SLOTS
@@ -166,7 +179,7 @@ void Device::PowerButtonReleased(){
     }
     this->powerButtonTimer.stop();
     // depending on state do something (cycle through groups or whatever)
-    if(this->state == State::InSession) { //And not held?
+    if(this->state == State::InSession) {
         softOff();
     }
     else if (this->state == State::ChoosingSession){
@@ -199,7 +212,6 @@ void Device::INTArrowButtonClicked(QAbstractButton* directionButton){
         } else if(QString::compare(buttonText,"intDownButton") == 0) {
             adjustIntensity(-1);
         }
-        qDebug() << "intensity: " << intensity;
     }
     else if(this->state == State::ChoosingSavedTherapy){
         // the QListWidget indexes 0 at the top, so clicking down needs to increase index
@@ -236,6 +248,7 @@ void Device::adjustIntensity(int change) {
     if(newIntensity >= 1 && newIntensity <=8) {
         intensity+= change;
         emit this->deviceUpdated();
+        qDebug() << "intensity: " << intensity;
     }
 }
 
@@ -376,7 +389,7 @@ void Device::startSession()
     }
 
     //Test session time
-    //sessionTimer.setInterval(5000);
+    //sessionTimer.setInterval(10000);
     //sessionTimer.start();
 
     this->state = State::InSession;
@@ -395,6 +408,10 @@ void Device::enterTestMode()
 //start session if there is a connection
 void Device::confirmConnection()
 {
+    if(this->state != State::TestingConnection) {
+            return;
+    }
+
     if (connectionStatus != ConnectionStatus::No){
         qDebug() << "connection confirmed, starting session...";
         startSession();
