@@ -283,34 +283,24 @@ void MainWindow::highlightSession(){
     auto currSessionType = this->device->getSelectedSessionType();
     auto currSessionGroup = this->device->getSelectedSessionGroup();
 
-    if (currSessionGroup == 0){
-        ui->sessionGroupIcon1->setStyleSheet("background-color: green;");
-    }
-    else if (currSessionGroup == 1){
-        ui->sessionGroupIcon2->setStyleSheet("background-color: green;");
-    }
-    else if (currSessionGroup == 2){
-        ui->sessionGroupIcon3->setStyleSheet("background-color: green;");
-    }
-    if (currSessionType == 0){
-        ui->sessionTypeIcon1->setStyleSheet("background-color: green;");
-    }
-    else if (currSessionType == 1){
-        ui->sessionTypeIcon2->setStyleSheet("background-color: green;");
-    }
-    else if (currSessionType == 2){
-        ui->sessionTypeIcon3->setStyleSheet("background-color: green;");
-    }
-    else if (currSessionType == 3){
-        ui->sessionTypeIcon4->setStyleSheet("background-color: green;");
-    }
+    // Highlighting for selected sessiong group
+    auto sessionGroupParent = this->ui->groupLayout;
+    sessionGroupParent->itemAt(currSessionGroup)->widget()->setStyleSheet("background-color: green;");
+
+    // Highlighting for selected sessiong type
+    auto sessionTypeParent = this->ui->typeLayout;
+    sessionTypeParent->itemAt(currSessionType)->widget()->setStyleSheet("background-color: green;");
 }
 void MainWindow::unHighlightSession(){
-    ui->sessionGroupIcon1->setStyleSheet("");
-    ui->sessionGroupIcon2->setStyleSheet("");
-    ui->sessionGroupIcon3->setStyleSheet("");
-    ui->sessionTypeIcon1->setStyleSheet("");
-    ui->sessionTypeIcon2->setStyleSheet("");
-    ui->sessionTypeIcon3->setStyleSheet("");
-    ui->sessionTypeIcon4->setStyleSheet("");
+    // Highlighting for selected sessiong group
+    auto sessionGroupParent = this->ui->groupLayout;
+    for(int i = 0; i < sessionGroupParent->count(); ++i){
+        sessionGroupParent->itemAt(i)->widget()->setStyleSheet("");
+    }
+
+    // Highlighting for selected sessiong group
+    auto sessionTypeParent = this->ui->typeLayout;
+    for(int i = 0; i < sessionTypeParent->count(); ++i){
+        sessionTypeParent->itemAt(i)->widget()->setStyleSheet("");
+    }
 }
