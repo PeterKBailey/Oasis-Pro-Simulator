@@ -7,11 +7,12 @@
 #include <QTimer>
 #include <QDebug>
 #include <QVector>
+#include <QListWidgetItem>
 
 #include "defs.h"
 
-enum State {Off, ChoosingSession, ChoosingSavedTherapy, InSession, Paused, TestingConnection};
-enum BatteryState { High, Low, CriticallyLow };
+enum State {Off, ChoosingSession, ChoosingSavedTherapy, InSession, Paused, TestingConnection, SoftOff};
+enum BatteryState {High, Low, Critical};
 enum ConnectionStatus {No, Okay, Excellent};
 
 class Device : public QObject
@@ -23,25 +24,40 @@ public:
 
     // getters
     State getState() const;
-    BatteryState getBatteryState() const;
     double getBatteryLevel() const;
     ConnectionStatus getConnectionStatus() const;
-
     int getIntensity() const;
-
     QString getActiveWavelength() const;
+    bool getRunBatteryAnimation() const;
+    int getSelectedSessionGroup() const;
+    int getSelectedSessionType() const;
+    bool getToggleRecord() const;
+    QString getInputtedName() const;
+
+    // pseudo-getters
+    int getRemainingSessionTime();
+    BatteryState getBatteryState();
+
+    QVector<Therapy *> getRecordedTherapies() const;
+
+    int getSelectedRecordedTherapy() const;
 
 private:
     State state;
-    BatteryState batteryState;
+    bool toggleRecord;
+
+    QTimer softOffTimer;
 
     QTimer sessionTimer;
-    int remainingSessionTime; // time, ms
+    int remainingSessionTime; // time left after pause, ms
 
     QTimer powerButtonTimer;
 
     QTimer batteryLevelTimer;
     double batteryLevel;
+    bool lowBatteryTriggered;
+    bool criticalBatteryTriggered;
+    bool runBatteryAnimation;
 
     QString activeWavelength;
     int intensity;
@@ -56,21 +72,37 @@ private:
     QVector<SessionGroup*> sessionGroups;
     QVector<SessionType*> sessionTypes;
 
+    // Data Structure for recorded therapies saved by user
+    int selectedRecordedTherapy;
+    QVector<Therapy*> recordedTherapies;
+    QString inputtedName; // Holds the text value in the username textbox
+
     void powerOn();
-    void powerOff(bool);
+    void powerOff();
+    void stopAllTimers();
+    void softOff();
     void pauseSession();
     void resumeSession();
     void enterTestMode();
     void configureDevice();
     void startSession();
+    void recordTherapy(QString);
+    void adjustIntensity(int);
+    void adjustSelectedRecordedTherapy(int);
+    void replayTherapy(QListWidgetItem*);
 
 public slots:
     void PowerButtonPressed();
     void PowerButtonReleased();
+    void CesReduction();
     void INTArrowButtonClicked(QAbstractButton*);
     void StartSessionButtonClicked();
+    void SetBattery(int);
     void ResetBattery();
     void SetConnectionStatus(int);
+    void UsernameInputted(QString);
+    void RecordButtonClicked();
+    void ReplayButtonClicked();
 
 private slots:
     void SessionComplete(); // for session timer

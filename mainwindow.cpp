@@ -8,18 +8,34 @@ MainWindow::MainWindow(Device* d, QWidget *parent)
     ui->setupUi(this);
     this->setupGraph();
     this->device = d;
+    this->displayBatteryInfo();
+
+    //Icons
+    this->ui->intUpButton->setIcon(style.standardIcon(QStyle::SP_ArrowUp));
+    this->ui->intDownButton->setIcon(style.standardIcon(QStyle::SP_ArrowDown));
+    this->ui->checkMarkButton->setIcon(style.standardIcon(QStyle::SP_DialogApplyButton));
+    this->ui->checkMarkButton->setIconSize(QSize(40,40));
 
     // observe
     connect(d, SIGNAL(deviceUpdated()), this, SLOT(updateDisplay()));
     connect(d, SIGNAL(endConnectionTest()), this, SLOT(updateWavelength()));
+
+    // session timer timer
+    this->sessionTimerChecker.setInterval(1000);
+    connect(&this->sessionTimerChecker, SIGNAL(timeout()), this, SLOT(displaySessionTime()));
 
     // setup ui
     connect(ui->powerButton, SIGNAL(pressed()), this->device, SLOT(PowerButtonPressed()));
     connect(ui->powerButton, SIGNAL(released()), this->device, SLOT(PowerButtonReleased()));
     connect(ui->intArrowButtonGroup, SIGNAL(buttonClicked(QAbstractButton*)), this->device, SLOT(INTArrowButtonClicked(QAbstractButton*)));
     connect(ui->checkMarkButton, SIGNAL(pressed()), this->device, SLOT(StartSessionButtonClicked()));
+    connect(ui->batteryLevelSlider, SIGNAL(valueChanged(int)), this->device, SLOT(SetBattery(int)));
     connect(ui->replaceBatteryButton, SIGNAL(pressed()), this->device, SLOT(ResetBattery()));
     connect(ui->connectionStrengthSlider, SIGNAL(valueChanged(int)), this->device, SLOT(SetConnectionStatus(int)));
+
+    connect(ui->usernameInput, SIGNAL(textEdited(QString)), this->device, SLOT(UsernameInputted(QString)));
+    connect(ui->recordTherapyButton, SIGNAL(pressed()), this->device, SLOT(RecordButtonClicked()));
+    connect(ui->replayTherapyButton, SIGNAL(pressed()), this->device, SLOT(ReplayButtonClicked()));
 
     clearDisplay();
 }
@@ -40,11 +56,18 @@ MainWindow::~MainWindow()
 }
 
 void MainWindow::updateDisplay(){
+    this->displayBatteryInfo();
+    this->displaySessionTime();
+
     auto state = device->getState();
+
+    this->ui->replayTherapyButton->setEnabled(state == State::ChoosingSession && device->getRecordedTherapies().count() > 0);
     if(state == State::Off){
+        stopAllTimers();
         this->clearDisplay();
         return;
-    } else if (state == State::TestingConnection){
+    }
+    else if (state == State::TestingConnection){
         auto status = this->device->getConnectionStatus();
         switch(status){
             case ConnectionStatus::No:
@@ -59,23 +82,50 @@ void MainWindow::updateDisplay(){
         }
         auto wavelength = this->device->getActiveWavelength();
         this->setWavelength(wavelength, true, "red");
-    } else if (state == State::InSession){
+    }
+    else if (state == State::InSession){
+        if(!this->sessionTimerChecker.isActive())
+            this->sessionTimerChecker.start();
         auto intensity = this->device->getIntensity();
         auto wavelength = this->device->getActiveWavelength();
         this->setWavelength(wavelength, false, "red");
+        // if the graph is animating then don't overwrite with intensity
+        if(!this->graphTimer.isActive())
+            this->setGraph(intensity, intensity, false, "green");
+    }
+    else if(state == State::SoftOff) {
+        auto intensity = this->device->getIntensity();
         this->setGraph(intensity, intensity, false, "green");
     }
-    //also need to call setWavelength() for other cases
+    else if(state == State::ChoosingSession){
 
-    setDeviceButtonsEnabled(true);
+    }
+    else if(state == State::ChoosingSavedTherapy){
+        this->ui->treatmentHistoryList->setCurrentRow(device->getSelectedRecordedTherapy());
+
+    }
+
+    //also need to call setWavelength() for other cases
+    setDeviceButtonsEnabled(device->getBatteryState() != BatteryState::Critical);
     this->ui->powerButton->setStyleSheet("border: 5px solid green;");
-    this->displayBatteryInfo();
+    displayRecordedSessions();
+    highlightSession();
+}
+
+void MainWindow::stopAllTimers() {
+    graphTimer.stop();
+    wavelengthBlinkTimer.stop();
 }
 
 void MainWindow::clearDisplay(){
     this->ui->powerButton->setStyleSheet("");
-    this->ui->batteryDisplay->display(0);
-    // turn off all the leds and stuff...
+
+    // clear recorded therapy items
+//    this->ui->treatmentHistoryList->clearSelection();
+    this->ui->treatmentHistoryList->clear();
+    this->ui->usernameInput->clear();
+
+    // turn off graph
     this->setGraph(0,0);
 
     // turn off CES mode wavelengths
@@ -84,6 +134,7 @@ void MainWindow::clearDisplay(){
     //disable device buttons
     setDeviceButtonsEnabled(false);
 
+    unHighlightSession();
 }
 
 void MainWindow::setDeviceButtonsEnabled(bool flag)
@@ -91,27 +142,33 @@ void MainWindow::setDeviceButtonsEnabled(bool flag)
     this->ui->checkMarkButton->setEnabled(flag);
     this->ui->intUpButton->setEnabled(flag);
     this->ui->intDownButton->setEnabled(flag);
-    this->ui->recordTherapyButton->setEnabled(flag);
-    this->ui->replayTherapyButton->setEnabled(flag);
+
+    auto state = device->getState();
+    if(state == State::InSession){
+        this->ui->usernameInput->setEnabled(true);
+    } else{
+        this->ui->usernameInput->setEnabled(false);
+    }
+    this->toggleRecordButton();
 }
 
 void MainWindow::displayBatteryInfo(){
-    static BatteryState deviceBatteryState = BatteryState::High;
-
-    // battery
-    auto newBatteryLevel = device->getBatteryLevel();
+    auto newBatteryLevel = (int)device->getBatteryLevel();
     BatteryState newBatteryState = device->getBatteryState();
 
-    this->ui->batteryDisplay->display((int)newBatteryLevel);
-    if(newBatteryState != deviceBatteryState){
-        deviceBatteryState = newBatteryState;
+    this->ui->batteryDisplay->display(newBatteryLevel);
+    this->ui->batteryLevelSlider->blockSignals(true);
+    this->ui->batteryLevelSlider->setValue(newBatteryLevel);
+    this->ui->batteryLevelSlider->blockSignals(false);
+
+    if(device->getRunBatteryAnimation()){
         if(newBatteryState == BatteryState::Low){
-            qDebug() << "low";
-            this->setGraph(1, 2, true, "#98ff98");
+            qDebug() << "Battery Low";
+            this->setGraph(1, 2, true, "yellow");
         }
-        else if(newBatteryState == BatteryState::CriticallyLow){
-            qDebug() << "crit low";
-            this->setGraph(1, 1, true, "#98ff98");
+        else if(newBatteryState == BatteryState::Critical){
+            qDebug() << "Battery Critically Low";
+            this->setGraph(1, 1, true, "red");
         }
     }
 }
@@ -159,6 +216,8 @@ void MainWindow::setGraph(int start, int end, bool blink, QString colour){
     // set the lights
     this->setGraphLights(start, end, colour);
     if(blink){
+        this->numGraphBlinks = 0;
+        this->isGraphBlinkOn = true;
         // graph timer can be applied to more than just blinking so disconnect other slots
         disconnect(&this->graphTimer, &QTimer::timeout, 0, 0);
         // qt signal slot using lambda expression to run graphBlink with the specified values
@@ -179,11 +238,8 @@ void MainWindow::setGraphLights(int start, int end, QString colour){
 }
 
 void MainWindow::graphBlink(int start, int end, QString colour){
-    static int numBlinks = 0;
-    static bool isOn = true;
-
     // if on, turn off
-    if(isOn){
+    if(this->isGraphBlinkOn){
         this->setGraphLights(0,0);
     }
     // if off, turn on
@@ -191,14 +247,86 @@ void MainWindow::graphBlink(int start, int end, QString colour){
         this->setGraphLights(start, end, colour);
     }
 
-    isOn = !isOn;
-    numBlinks++;
-    if(numBlinks == 5){
-        numBlinks = 0;
+    this->isGraphBlinkOn = !this->isGraphBlinkOn;
+    this->numGraphBlinks++;
+    if(this->numGraphBlinks == 5){
+        this->numGraphBlinks = 0;
         // by default blink assumes the lights are on and should be turned off
-        isOn = true;
+        this->isGraphBlinkOn = true;
         this->graphTimer.stop();
     }
+}
+
+void MainWindow::toggleRecordButton(){
+    // Record Button only visible when there is valid text in the username input box
+    auto toggleRecord = device->getToggleRecord();
+    if(device->getState() == State::InSession){
+        this->ui->recordTherapyButton->setEnabled(toggleRecord);
+    } else {
+        // If device not in session state then ever show the record therapy button
+        this->ui->recordTherapyButton->setEnabled(false);
+    }
+}
+
+void MainWindow::displayRecordedSessions(){
+    // only update treatment list when necessary
+    if (device->getRecordedTherapies().length() > this->ui->treatmentHistoryList->count()){
+        ui->treatmentHistoryList->clear();
+
+        int widgetLength = ui->treatmentHistoryList->count();
+        auto list = device->getRecordedTherapies();
+        int listLength = list.length();
+        for (int i = 0; i<list.length(); ++i){
+             QListWidgetItem* item = new QListWidgetItem;
+             item->setText("Username: " + list[i]->username + " Group: " + list[i]->group.name + " Type: " + list[i]->type.name + " Intensity: " + QString::number(list[i]->intensity));
+             item->setData(Qt::UserRole, QString::number(i));
+             ui->treatmentHistoryList->addItem(item);
+        }
+    }
+}
+
+void MainWindow::toggleReplayButton(){
+    // Record Button only visible when there is valid text in the username input box
+    auto toggleRecord = device->getToggleRecord();
+    this->ui->replayTherapyButton->setEnabled(true);
+}
+
+void MainWindow::highlightSession(){
+    unHighlightSession();
+    auto currSessionType = this->device->getSelectedSessionType();
+    auto currSessionGroup = this->device->getSelectedSessionGroup();
+
+    // Highlighting for selected sessiong group
+    auto sessionGroupParent = this->ui->groupLayout;
+    sessionGroupParent->itemAt(currSessionGroup)->widget()->setStyleSheet("background-color: green;");
+
+    // Highlighting for selected sessiong type
+    auto sessionTypeParent = this->ui->typeLayout;
+    sessionTypeParent->itemAt(currSessionType)->widget()->setStyleSheet("background-color: green;");
+}
+void MainWindow::unHighlightSession(){
+    // Highlighting for selected sessiong group
+    auto sessionGroupParent = this->ui->groupLayout;
+    for(int i = 0; i < sessionGroupParent->count(); ++i){
+        sessionGroupParent->itemAt(i)->widget()->setStyleSheet("");
+    }
+
+    // Highlighting for selected sessiong group
+    auto sessionTypeParent = this->ui->typeLayout;
+    for(int i = 0; i < sessionTypeParent->count(); ++i){
+        sessionTypeParent->itemAt(i)->widget()->setStyleSheet("");
+    }
+}
+
+void MainWindow::displaySessionTime(){
+    int remainingTime = this->device->getRemainingSessionTime();
+    qDebug() << "Session time remaining: " << remainingTime;
+    if (remainingTime <= 0) {
+        this->sessionTimerChecker.stop();
+        this->ui->therapyTime->display(0);
+        return;
+    }
+    this->ui->therapyTime->display(remainingTime/1000);
 }
 
 
