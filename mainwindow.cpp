@@ -83,7 +83,8 @@ void MainWindow::updateDisplay(){
         this->setWavelength(wavelength, true, "red");
     }
     else if (state == State::InSession){
-        this->sessionTimerChecker.start();
+        if(!this->sessionTimerChecker.isActive())
+            this->sessionTimerChecker.start();
         auto intensity = this->device->getIntensity();
         auto wavelength = this->device->getActiveWavelength();
         this->setWavelength(wavelength, false, "red");
@@ -313,8 +314,10 @@ void MainWindow::unHighlightSession(){
 
 void MainWindow::displaySessionTime(){
     int remainingTime = this->device->getRemainingSessionTime();
-    if (remainingTime < 0) {
+    qDebug() << "Session time remaining: " << remainingTime;
+    if (remainingTime <= 0) {
         this->sessionTimerChecker.stop();
+        this->ui->therapyTime->display(0);
         return;
     }
     this->ui->therapyTime->display(remainingTime/1000);
