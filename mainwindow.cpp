@@ -142,10 +142,9 @@ void MainWindow::setDeviceButtonsEnabled(bool flag)
     this->ui->intDownButton->setEnabled(flag);
 
     auto state = device->getState();
-    //if(state == State::InSession || state == State::ChoosingSession || state == State::Paused){
     if(state == State::InSession){
         this->ui->usernameInput->setEnabled(true);
-    } else {
+    } else{
         this->ui->usernameInput->setEnabled(false);
     }
     this->toggleRecordButton();
@@ -254,7 +253,12 @@ void MainWindow::graphBlink(int start, int end, QString colour){
 void MainWindow::toggleRecordButton(){
     // Record Button only visible when there is valid text in the username input box
     auto toggleRecord = device->getToggleRecord();
-    this->ui->recordTherapyButton->setEnabled(toggleRecord);
+    if(device->getState() == State::InSession){
+        this->ui->recordTherapyButton->setEnabled(toggleRecord);
+    } else {
+        // If device not in session state then ever show the record therapy button
+        this->ui->recordTherapyButton->setEnabled(false);
+    }
 }
 
 void MainWindow::displayRecordedSessions(){
@@ -278,7 +282,6 @@ void MainWindow::toggleReplayButton(){
     // Record Button only visible when there is valid text in the username input box
     auto toggleRecord = device->getToggleRecord();
     this->ui->replayTherapyButton->setEnabled(true);
-
 }
 
 void MainWindow::highlightSession(){
