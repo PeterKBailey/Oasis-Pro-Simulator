@@ -285,28 +285,22 @@ void MainWindow::highlightSession(){
 
     // Highlighting for selected sessiong group
     auto sessionGroupParent = this->ui->groupLayout;
-    QVector<QWidget*> allSessionGroups;
-    for(int i = 0; i < sessionGroupParent->count(); ++i){
-        auto currGroup = sessionGroupParent->itemAt(i)->widget();
-        allSessionGroups.append(currGroup);
-    }
-    allSessionGroups[currSessionGroup]->setStyleSheet("background-color: green;");
+    sessionGroupParent->itemAt(currSessionGroup)->widget()->setStyleSheet("background-color: green;");
 
     // Highlighting for selected sessiong type
     auto sessionTypeParent = this->ui->typeLayout;
-    QVector<QWidget*> allSessionTypes;
-    for(int i = 0; i < sessionTypeParent->count(); ++i){
-        auto currType = sessionTypeParent->itemAt(i)->widget();
-        allSessionTypes.append(currType);
-    }
-    allSessionTypes[currSessionType]->setStyleSheet("background-color: green;");
+    sessionTypeParent->itemAt(currSessionType)->widget()->setStyleSheet("background-color: green;");
 }
 void MainWindow::unHighlightSession(){
-    ui->sessionGroupIcon1->setStyleSheet("");
-    ui->sessionGroupIcon2->setStyleSheet("");
-    ui->sessionGroupIcon3->setStyleSheet("");
-    ui->sessionTypeIcon1->setStyleSheet("");
-    ui->sessionTypeIcon2->setStyleSheet("");
-    ui->sessionTypeIcon3->setStyleSheet("");
-    ui->sessionTypeIcon4->setStyleSheet("");
+    // Highlighting for selected sessiong group
+    auto sessionGroupParent = this->ui->groupLayout;
+    for(int i = 0; i < sessionGroupParent->count(); ++i){
+        sessionGroupParent->itemAt(i)->widget()->setStyleSheet("");
+    }
+
+    // Highlighting for selected sessiong group
+    auto sessionTypeParent = this->ui->typeLayout;
+    for(int i = 0; i < sessionTypeParent->count(); ++i){
+        sessionTypeParent->itemAt(i)->widget()->setStyleSheet("");
+    }
 }
