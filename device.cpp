@@ -117,6 +117,7 @@ QString Device::getInputtedName() const
 }
 
 void Device::powerOn(){
+    qDebug() << "Powering on";
     this->state = State::ChoosingSession;
     this->batteryLevelTimer.start();
     emit this->deviceUpdated();
