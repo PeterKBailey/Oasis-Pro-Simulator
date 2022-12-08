@@ -78,8 +78,6 @@ void MainWindow::updateDisplay(){
         this->setWavelength(wavelength, true, "red");
     }
     else if (state == State::InSession){
-        this->toggleRecordButton();
-
         auto intensity = this->device->getIntensity();
         auto wavelength = this->device->getActiveWavelength();
         this->setWavelength(wavelength, false, "red");
@@ -142,7 +140,13 @@ void MainWindow::setDeviceButtonsEnabled(bool flag)
     this->ui->checkMarkButton->setEnabled(flag);
     this->ui->intUpButton->setEnabled(flag);
     this->ui->intDownButton->setEnabled(flag);
-    this->ui->usernameInput->setEnabled(flag);
+
+    auto state = device->getState();
+    if(state == State::InSession){
+        this->ui->usernameInput->setEnabled(true);
+    } else{
+        this->ui->usernameInput->setEnabled(false);
+    }
     this->toggleRecordButton();
 }
 
@@ -278,7 +282,6 @@ void MainWindow::toggleReplayButton(){
     // Record Button only visible when there is valid text in the username input box
     auto toggleRecord = device->getToggleRecord();
     this->ui->replayTherapyButton->setEnabled(true);
-
 }
 
 void MainWindow::highlightSession(){
