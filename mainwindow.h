@@ -44,6 +44,7 @@ private:
     void displayRecordedSessions();
     void toggleReplayButton();
     void highlightSession();
+    void unHighlightSession();
 
 private slots:
     void updateDisplay();
