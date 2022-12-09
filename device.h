@@ -42,6 +42,8 @@ public:
 
     int getSelectedRecordedTherapy() const;
 
+    bool getDisconnected() const;
+
 private:
     State state;
     bool toggleRecord;
@@ -53,11 +55,14 @@ private:
 
     QTimer powerButtonTimer;
 
+    QTimer testConnectionTimer;
+
     QTimer batteryLevelTimer;
     double batteryLevel;
     bool lowBatteryTriggered;
     bool criticalBatteryTriggered;
     bool runBatteryAnimation;
+    bool disconnected;
 
     QString activeWavelength;
     int intensity;
@@ -112,6 +117,7 @@ private slots:
 
 signals:
     void deviceUpdated();
+    void connectionTest(bool);
 };
 
 #endif // DEVICE_H

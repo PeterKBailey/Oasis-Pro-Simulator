@@ -18,6 +18,7 @@ MainWindow::MainWindow(Device* d, QWidget *parent)
 
     // observe
     connect(d, SIGNAL(deviceUpdated()), this, SLOT(updateDisplay()));
+    connect(d, SIGNAL(connectionTest(bool)), this, SLOT(updateWavelengthBlinker(bool)));
 
     // session timer timer
     this->sessionTimerChecker.setInterval(1000);
@@ -79,15 +80,11 @@ void MainWindow::updateDisplay(){
                 this->setGraph(1, 3, false, "green");
                 break;
         }
-        auto wavelength = this->device->getActiveWavelength();
-        this->setWavelength(wavelength, true, "red");
     }
     else if (state == State::InSession){
         if(!this->sessionTimerChecker.isActive())
             this->sessionTimerChecker.start();
         auto intensity = this->device->getIntensity();
-        auto wavelength = this->device->getActiveWavelength();
-        this->setWavelength(wavelength, false, "red");
         // if the graph is animating then don't overwrite with intensity
         if(!this->graphTimer.isActive())
             this->setGraph(intensity, intensity, false, "green");
@@ -104,8 +101,10 @@ void MainWindow::updateDisplay(){
 
     }
 
-    //also need to call setWavelength() for other cases
-    setDeviceButtonsEnabled(device->getBatteryState() != BatteryState::Critical);
+    auto wavelength = this->device->getActiveWavelength();
+    this->setWavelength(wavelength, false, "red");
+
+    setDeviceButtonsEnabled(state != State::Paused);
     this->ui->powerButton->setStyleSheet("border: 5px solid green;");
     displayRecordedSessions();
     highlightSession();
@@ -138,7 +137,7 @@ void MainWindow::clearDisplay(){
 
 void MainWindow::setDeviceButtonsEnabled(bool flag)
 {
-    this->ui->checkMarkButton->setEnabled(flag);
+    this->ui->checkMarkButton->setEnabled(device->getState() == State::ChoosingSession || device->getState() == State::ChoosingSavedTherapy);
     this->ui->intUpButton->setEnabled(flag);
     this->ui->intDownButton->setEnabled(flag);
 
@@ -174,34 +173,49 @@ void MainWindow::displayBatteryInfo(){
 
 void MainWindow::setWavelength(QString wavelength, bool blink, QString colour)
 {
+
     if (wavelength == "small" || wavelength == "big"){
-        auto icon = wavelength == "small" ? this->ui->cesSmallWaveIcon : this->ui->cesBigWaveIcon;
-        if (blink){
-            qDebug() <<"icon blinking...";
+        QLabel *activeIcon, *inactiveIcon;
+        activeIcon = wavelength == "small" ? this->ui->cesSmallWaveIcon : this->ui->cesBigWaveIcon;
+        inactiveIcon = wavelength == "small" ? this->ui->cesBigWaveIcon : this->ui->cesSmallWaveIcon;
+
+        if (blink && !this->wavelengthBlinkTimer.isActive()){
+            this->isWavelengthBlinkOn = true;
             this->wavelengthBlinkTimer.setInterval(1000);
             this->wavelengthBlinkTimer.callOnTimeout([wavelength, this](){this->wavelengthBlink(wavelength);});
             this->wavelengthBlinkTimer.start();
         } else{
-            icon->setStyleSheet("color: " + colour + ";");
+            activeIcon->setStyleSheet("color: " + colour + ";");
+            inactiveIcon->setStyleSheet("color: black;");
         }
     } else {
-        this->ui->cesSmallWaveIcon->setStyleSheet("color: " + colour + ";");
-        this->ui->cesBigWaveIcon->setStyleSheet("color: " + colour + ";");
+        this->ui->cesSmallWaveIcon->setStyleSheet("color: black;");
+        this->ui->cesBigWaveIcon->setStyleSheet("color: black;");
     }
 }
 
 void MainWindow::wavelengthBlink(QString wavelength)
 {
-    static bool isWavelengthOn = true;
-
-    if(isWavelengthOn){
+    if(isWavelengthBlinkOn){
+//        qDebug()<<"setting black";
         this->setWavelength(wavelength);
     }
     else {
+//        qDebug()<<"setting red";
         this->setWavelength(wavelength, false, "red");
     }
 
-    isWavelengthOn = !isWavelengthOn;
+    isWavelengthBlinkOn = !isWavelengthBlinkOn;
+}
+
+void MainWindow::updateWavelengthBlinker(bool isStart)
+{
+    if (isStart){
+        auto wavelength = this->device->getActiveWavelength();
+        this->setWavelength(wavelength, true, "red");
+    } else{
+        this->wavelengthBlinkTimer.stop();
+    }
 }
 
 void MainWindow::setGraph(int start, int end, bool blink, QString colour){

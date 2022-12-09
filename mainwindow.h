@@ -9,7 +9,10 @@
 #include "device.h"
 
 QT_BEGIN_NAMESPACE
-namespace Ui { class MainWindow; }
+namespace Ui
+{
+    class MainWindow;
+}
 QT_END_NAMESPACE
 
 class MainWindow : public QMainWindow
@@ -17,13 +20,13 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    MainWindow(Device*, QWidget *parent = nullptr);
+    MainWindow(Device *, QWidget *parent = nullptr);
     ~MainWindow();
 
 private:
     Ui::MainWindow *ui;
-    Device* device;
-    QVector<QLabel*> graph;
+    Device *device;
+    QVector<QLabel *> graph;
     QTimer graphTimer;
     QTimer wavelengthBlinkTimer;
     QTimer sessionTimerChecker;
@@ -31,6 +34,7 @@ private:
     QCommonStyle style;
     int numGraphBlinks;
     bool isGraphBlinkOn;
+    bool isWavelengthBlinkOn;
 
     void setupGraph();
     void stopAllTimers();
@@ -50,7 +54,7 @@ private:
 
 private slots:
     void updateDisplay();
+    void updateWavelengthBlinker(bool);
     void displaySessionTime();
-
 };
 #endif // MAINWINDOW_H
