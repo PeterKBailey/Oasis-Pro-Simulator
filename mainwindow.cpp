@@ -106,7 +106,7 @@ void MainWindow::updateDisplay(){
     }
 
     //also need to call setWavelength() for other cases
-    setDeviceButtonsEnabled(device->getBatteryState() != BatteryState::Critical);
+    setDeviceButtonsEnabled(state != State::Paused);
     this->ui->powerButton->setStyleSheet("border: 5px solid green;");
     displayRecordedSessions();
     highlightSession();
