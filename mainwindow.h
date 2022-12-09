@@ -34,6 +34,7 @@ private:
     QCommonStyle style;
     int numGraphBlinks;
     bool isGraphBlinkOn;
+    bool isWavelengthBlinkOn;
 
     void setupGraph();
     void stopAllTimers();
@@ -53,7 +54,7 @@ private:
 
 private slots:
     void updateDisplay();
-    void updateWavelength();
+    void updateWavelengthBlinker(bool);
     void displaySessionTime();
 };
 #endif // MAINWINDOW_H

@@ -117,7 +117,7 @@ private slots:
 
 signals:
     void deviceUpdated();
-    void endConnectionTest();
+    void connectionTest(bool);
 };
 
 #endif // DEVICE_H

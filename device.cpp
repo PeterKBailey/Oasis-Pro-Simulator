@@ -1,7 +1,7 @@
 #include "device.h"
 
 Device::Device(QObject *parent) : QObject(parent),
-    batteryLevel(29), runBatteryAnimation(false), activeWavelength("none"), intensity(0), state(State::Off), remainingSessionTime(-1), connectionStatus(ConnectionStatus::No), selectedSessionGroup(0), selectedSessionType(0), selectedRecordedTherapy(0), toggleRecord(false), disconnected(true)
+    batteryLevel(29), runBatteryAnimation(false), activeWavelength("none"), intensity(0), state(State::Off), remainingSessionTime(-1), connectionStatus(ConnectionStatus::Excellent), selectedSessionGroup(0), selectedSessionType(0), selectedRecordedTherapy(0), toggleRecord(false), disconnected(true)
 {
     // set up the powerButtonTimer, tell it not to repeat, tell it to stop after 1s
     this->powerButtonTimer.setSingleShot(true);
@@ -133,6 +133,7 @@ void Device::powerOn(){
     qDebug() << "Powering on";
     this->state = State::ChoosingSession;
     this->batteryLevelTimer.start();
+    this->activeWavelength = sessionTypes[selectedSessionType]->wavelength;
     emit this->deviceUpdated();
 }
 void Device::powerOff() {
@@ -235,6 +236,7 @@ void Device::INTArrowButtonClicked(QAbstractButton* directionButton){
         } else if(QString::compare(buttonText,"intDownButton") == 0) {
             adjustSelectedRecordedTherapy(1);
         }
+        this->activeWavelength = recordedTherapies[this->selectedRecordedTherapy]->type.wavelength;
     }
     else if (this->state == State::ChoosingSession){
         if(QString::compare(buttonText,"intUpButton") == 0) {
@@ -252,6 +254,7 @@ void Device::INTArrowButtonClicked(QAbstractButton* directionButton){
                 this->selectedSessionType--;
             }
         }
+        this->activeWavelength = sessionTypes[this->selectedSessionType]->wavelength;
         qDebug() << "UPDATED SESSION TYPE: " << sessionTypes[this->selectedSessionType]->name;
     }
     emit this->deviceUpdated();
@@ -296,7 +299,6 @@ void Device::StartSessionButtonClicked(){
         }
         this->intensity = chosenTherapy->intensity;
     }
-    this->activeWavelength = sessionTypes[selectedSessionType]->wavelength;
     enterTestMode();
 }
 
@@ -332,8 +334,8 @@ void Device::SetConnectionStatus(int status)
     } else if (state == State::Paused && connectionStatus != ConnectionStatus::No && disconnected){ //reconnect
         disconnected = false;
         this->resumeSession();
-        qDebug() << "resuming after connection lost";
     }
+    emit this->deviceUpdated();
 }
 void Device::SessionComplete(){
     softOff();
@@ -429,6 +431,7 @@ void Device::enterTestMode()
     qDebug() << "testing connection...";
     this->state = State::TestingConnection;
     emit this->deviceUpdated();
+    emit this->connectionTest(true);
     testConnectionTimer.start();//let the display show connection status for 5 seconds and then start session if there is a connection
 }
 
@@ -441,7 +444,7 @@ void Device::confirmConnection()
 
     if (connectionStatus != ConnectionStatus::No){
         disconnected = false;
-        emit this->endConnectionTest();
+        emit this->connectionTest(false);
         qDebug() << "connection confirmed, starting session...";
         startSession();
     } else {
