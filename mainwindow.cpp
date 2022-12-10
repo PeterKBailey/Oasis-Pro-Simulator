@@ -95,17 +95,19 @@ void MainWindow::updateDisplay(){
         this->setGraph(intensity, intensity, false, "green");
     }
     else if(state == State::ChoosingSession){
+
         if(this->device->getSelectedSessionGroup() == 2) {
             int selectedUserSession = this->device->getSelectedUserSession();
             unHighlightSessionType();
             this->setGraph(selectedUserSession+1, selectedUserSession+1, false, "green");
         } else {
-            this->setGraph(0,0);
+            if(!this->graphTimer.isActive()) {
+                this->setGraph(0,0);
+            }
         }
     }
     else if(state == State::ChoosingSavedTherapy){
         this->ui->treatmentHistoryList->setCurrentRow(device->getSelectedRecordedTherapy());
-
     }
 
     auto wavelength = this->device->getActiveWavelength();

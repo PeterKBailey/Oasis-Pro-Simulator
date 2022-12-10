@@ -1,7 +1,7 @@
 #include "device.h"
 
 Device::Device(QObject *parent) : QObject(parent),
-    batteryLevel(29), runBatteryAnimation(false), activeWavelength("none"), intensity(0), state(State::Off), remainingSessionTime(-1), connectionStatus(ConnectionStatus::Excellent), selectedSessionGroup(0), selectedSessionType(0), selectedUserSession(0), selectedRecordedTherapy(0), toggleRecord(false), disconnected(true)
+    batteryLevel(29), runBatteryAnimation(false), activeWavelength("none"), intensity(0), state(State::Off), remainingSessionTime(-1), connectionStatus(ConnectionStatus::Excellent), selectedSessionGroup(0), selectedSessionType(0), selectedUserSession(0), selectedRecordedTherapy(0), toggleRecord(false), disconnected(false)
 {
     // set up the powerButtonTimer, tell it not to repeat, tell it to stop after 1s
     this->powerButtonTimer.setSingleShot(true);
@@ -220,7 +220,10 @@ void Device::PowerButtonReleased(){
 
         if(selectedSessionGroup == 2) {
             userSessionWaveLength();
+        } else {
+            this->activeWavelength = sessionTypes[this->selectedSessionType]->wavelength;
         }
+
         qDebug() << "UPDATED SESSION Group: " << sessionGroups[this->selectedSessionGroup]->name;
     }
     emit this->deviceUpdated();
