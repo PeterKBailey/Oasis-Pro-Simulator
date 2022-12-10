@@ -1,7 +1,7 @@
 #include "device.h"
 
 Device::Device(QObject *parent) : QObject(parent),
-    batteryLevel(29), runBatteryAnimation(false), activeWavelength("none"), intensity(0), state(State::Off), remainingSessionTime(-1), connectionStatus(ConnectionStatus::Excellent), selectedSessionGroup(0), selectedSessionType(0), selectedRecordedTherapy(0), toggleRecord(false), disconnected(true)
+    batteryLevel(29), runBatteryAnimation(false), activeWavelength("none"), intensity(0), state(State::Off), remainingSessionTime(-1), connectionStatus(ConnectionStatus::Excellent), selectedSessionGroup(0), selectedSessionType(0), selectedUserSession(0), selectedRecordedTherapy(0), toggleRecord(false), disconnected(true)
 {
     // set up the powerButtonTimer, tell it not to repeat, tell it to stop after 1s
     this->powerButtonTimer.setSingleShot(true);
@@ -32,6 +32,7 @@ Device::~Device()
 {
     for (SessionGroup *group : sessionGroups) delete group;
     for (SessionType *type : sessionTypes) delete type;
+    for (UserDesignedSession *userDesign : userDesignedSessions) delete userDesign;
 }
 
 //Initialize session groups and types
@@ -47,6 +48,16 @@ void Device::configureDevice()
     sessionTypes.append(new SessionType("Sub-Delta", "big"));
     sessionTypes.append(new SessionType("Delta", "small"));
     sessionTypes.append(new SessionType("Theta", "small"));
+
+    //Add test user designed sessions
+    QVector<SessionType*> sTypes1;
+    sTypes1.append(sessionTypes.at(0));
+    userDesignedSessions.append(new UserDesignedSession("Test1", 20, sTypes1));
+
+    QVector<SessionType*> sTypes2;
+    sTypes2.append(sessionTypes.at(1));
+    sTypes2.append(sessionTypes.at(2));
+    userDesignedSessions.append(new UserDesignedSession("Test2", 10, sTypes2));
 }
 
 
@@ -104,6 +115,11 @@ bool Device::getDisconnected() const
     return disconnected;
 }
 
+int Device::getSelectedUserSession() const
+{
+    return selectedUserSession;
+}
+
 bool Device::getRunBatteryAnimation() const
 {
     return runBatteryAnimation;
@@ -147,6 +163,7 @@ void Device::powerOff() {
     this->criticalBatteryTriggered = false;
     this->selectedSessionGroup = 0;
     this->selectedSessionType = 0;
+    this->selectedUserSession = 0;
     this->selectedRecordedTherapy = 0;
     this->inputtedName = "";
     this->activeWavelength = "none";
@@ -194,16 +211,15 @@ void Device::PowerButtonReleased(){
         return;
     }
     this->powerButtonTimer.stop();
-    // depending on state do something (cycle through groups or whatever)
+
     if(this->state == State::InSession) {
         softOff();
     }
     else if (this->state == State::ChoosingSession){
-        if (this->selectedSessionGroup == 2){
-            this->selectedSessionGroup = 0;
-        }
-        else{
-            this->selectedSessionGroup++;
+        this->selectedSessionGroup = (this->selectedSessionGroup+ 1) % sessionGroups.size();
+
+        if(selectedSessionGroup == 2) {
+            userSessionWaveLength();
         }
         qDebug() << "UPDATED SESSION Group: " << sessionGroups[this->selectedSessionGroup]->name;
     }
@@ -240,21 +256,30 @@ void Device::INTArrowButtonClicked(QAbstractButton* directionButton){
     }
     else if (this->state == State::ChoosingSession){
         if(QString::compare(buttonText,"intUpButton") == 0) {
-            if (this->selectedSessionType == 3){
-                this->selectedSessionType = 0;
-            }
-            else{
-                this->selectedSessionType++;
+
+            if(selectedSessionGroup != 2) {
+                this->selectedSessionType = (this->selectedSessionType + 1) % sessionTypes.size();
+            } else {
+                this->selectedUserSession = (this->selectedUserSession + 1) % userDesignedSessions.size();
+                userSessionWaveLength();
+                qDebug() << "User session: " << selectedUserSession;
             }
         } else if(QString::compare(buttonText,"intDownButton") == 0) {
-            if (this->selectedSessionType == 0){
-                this->selectedSessionType = 3;
-            }
-            else{
-                this->selectedSessionType--;
+
+            if(selectedSessionGroup != 2) {
+                this->selectedSessionType = (this->selectedSessionType == 0) ? sessionTypes.size()-1 : this->selectedSessionType - 1;
+            } else {
+                this->selectedUserSession = (this->selectedUserSession == 0) ? userDesignedSessions.size()-1 : this->selectedUserSession - 1;
+                qDebug() << "User session: " << selectedUserSession;
             }
         }
-        this->activeWavelength = sessionTypes[this->selectedSessionType]->wavelength;
+
+        if(selectedSessionGroup == 2) {
+            userSessionWaveLength();
+        } else {
+            this->activeWavelength = sessionTypes[this->selectedSessionType]->wavelength;
+        }
+
         qDebug() << "UPDATED SESSION TYPE: " << sessionTypes[this->selectedSessionType]->name;
     }
     emit this->deviceUpdated();
@@ -418,7 +443,11 @@ void Device::startSession()
         return;
     }
 
-    sessionTimer.setInterval(this->sessionGroups[this->selectedSessionGroup]->durationMins*1000);
+    if(selectedSessionGroup == 2) {
+        sessionTimer.setInterval(this->userDesignedSessions.at(this->selectedUserSession)->durationMins*1000);
+    } else {
+        sessionTimer.setInterval(this->sessionGroups[this->selectedSessionGroup]->durationMins*1000);
+    }
     sessionTimer.start();
 
     this->state = State::InSession;
@@ -501,5 +530,27 @@ void Device::recordTherapy(QString username)
     }
     qDebug() << "Recorded Therapies: " << recordedTherapies;
     emit this->deviceUpdated();
+}
+
+void Device::userSessionWaveLength() {
+    //determine active wavelength
+    bool isSmall = false;
+    bool isBig = false;
+
+    for(SessionType *type : userDesignedSessions.at(selectedUserSession)->types) {
+        if(QString::compare(type->wavelength,"small") == 0) {
+            isSmall = true;
+        } else if(QString::compare(type->wavelength,"big") == 0) {
+            isBig = true;
+        }
+    }
+
+    if(isSmall && isBig) {
+        this->activeWavelength = "both";
+    } else if(isSmall) {
+        this->activeWavelength = "small";
+    } else if (isBig) {
+        this->activeWavelength = "big";
+    }
 }
 

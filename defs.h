@@ -27,8 +27,8 @@ struct Therapy {
 struct UserDesignedSession {
     QString name;
     int durationMins;
-    QVector<SessionType> types;
-    UserDesignedSession(QString n, int d, QVector<SessionType> t) : name(n), durationMins(d), types(t){}
+    QVector<SessionType*> types;
+    UserDesignedSession(QString n, int d, QVector<SessionType*> t) : name(n), durationMins(d), types(t){}
 };
 
 #endif // DEFS_H
