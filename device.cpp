@@ -1,7 +1,7 @@
 #include "device.h"
 
 Device::Device(QObject *parent) : QObject(parent),
-    batteryLevel(29), runBatteryAnimation(false), activeWavelength("none"), intensity(0), state(State::Off), remainingSessionTime(-1), connectionStatus(ConnectionStatus::Excellent), selectedSessionGroup(0), selectedSessionType(0), selectedRecordedTherapy(0), toggleRecord(false), disconnected(true)
+    batteryLevel(29), runBatteryAnimation(false), activeWavelength("none"), intensity(0), state(State::Off), remainingSessionTime(-1), connectionStatus(ConnectionStatus::Excellent), selectedSessionGroup(0), selectedSessionType(0), selectedRecordedTherapy(0), toggleRecord(false), disconnected(false)
 {
     // set up the powerButtonTimer, tell it not to repeat, tell it to stop after 1s
     this->powerButtonTimer.setSingleShot(true);
@@ -331,6 +331,9 @@ void Device::SetConnectionStatus(int status)
         this->confirmConnection();
     } else if (state == State::InSession && connectionStatus == ConnectionStatus::No){//disconnect during session
         this->pauseSession();
+        //set graph no connection
+        //after a few seconds, make graph scroll for 20 seconds
+        //set intensity to 0
     } else if (state == State::Paused && connectionStatus != ConnectionStatus::No && disconnected){ //reconnect
         disconnected = false;
         this->resumeSession();

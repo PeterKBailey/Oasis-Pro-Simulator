@@ -182,7 +182,8 @@ void MainWindow::setWavelength(QString wavelength, bool blink, QString colour)
         if (blink && !this->wavelengthBlinkTimer.isActive()){
             this->isWavelengthBlinkOn = true;
             this->wavelengthBlinkTimer.setInterval(1000);
-            this->wavelengthBlinkTimer.callOnTimeout([wavelength, this](){this->wavelengthBlink(wavelength);});
+            disconnect(&this->wavelengthBlinkTimer, &QTimer::timeout, 0, 0);
+            connect(&this->wavelengthBlinkTimer, &QTimer::timeout, this, [wavelength, this](){this->wavelengthBlink(wavelength);});
             this->wavelengthBlinkTimer.start();
         } else{
             activeIcon->setStyleSheet("color: " + colour + ";");
