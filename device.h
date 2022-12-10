@@ -31,6 +31,7 @@ public:
     bool getRunBatteryAnimation() const;
     int getSelectedSessionGroup() const;
     int getSelectedSessionType() const;
+    int getSelectedUserSession() const;
     bool getToggleRecord() const;
     QString getInputtedName() const;
 
@@ -43,6 +44,7 @@ public:
     int getSelectedRecordedTherapy() const;
 
     bool getDisconnected() const;
+
 
 private:
     State state;
@@ -72,10 +74,12 @@ private:
     // highlighted / currently selected
     int selectedSessionGroup; // (time) 0, 1, 2
     int selectedSessionType; // (frequency) 0, 1, 2, 3
+    int selectedUserSession;
 
     // stored data of the groups and sessions we have, set up in ctor
     QVector<SessionGroup*> sessionGroups;
     QVector<SessionType*> sessionTypes;
+    QVector<UserDesignedSession*> userDesignedSessions;
 
     // Data Structure for recorded therapies saved by user
     int selectedRecordedTherapy;
@@ -95,6 +99,7 @@ private:
     void adjustIntensity(int);
     void adjustSelectedRecordedTherapy(int);
     void replayTherapy(QListWidgetItem*);
+    void userSessionWaveLength();
 
 public slots:
     void PowerButtonPressed();
