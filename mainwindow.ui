@@ -575,7 +575,14 @@
      <item>
       <widget class="QLabel" name="treatmentHistoryLabel">
        <property name="text">
-        <string>Recorded Treatment History:</string>
+        <string>RECORDED TREATMENT HISTORY:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="treatmentHistoryLabel_2">
+       <property name="text">
+        <string>Username | Group | Type | Intensity</string>
        </property>
       </widget>
      </item>
