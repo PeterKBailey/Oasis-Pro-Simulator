@@ -13,7 +13,7 @@
 
 enum State {Off, ChoosingSession, ChoosingSavedTherapy, InSession, Paused, TestingConnection, SoftOff};
 enum BatteryState {High, Low, Critical};
-enum ConnectionStatus {No, Okay, Excellent};
+enum ConnectionStatus {No=3, Okay=2, Excellent=1}; // ints used in battery drain
 
 class Device : public QObject
 {
