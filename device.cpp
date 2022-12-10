@@ -13,7 +13,8 @@ Device::Device(QObject *parent) : QObject(parent),
                                   selectedUserSession(0),
                                   selectedRecordedTherapy(0),
                                   toggleRecord(false),
-                                  disconnected(false) {
+                                  disconnected(false),
+                                  returningToSafeVoltage(false) {
     // set up the powerButtonTimer, tell it not to repeat, tell it to stop after 1s
     this->powerButtonTimer.setSingleShot(true);
     this->powerButtonTimer.setInterval(1000);
@@ -32,6 +33,11 @@ Device::Device(QObject *parent) : QObject(parent),
     this->testConnectionTimer.setSingleShot(true);
     this->testConnectionTimer.setInterval(5000);
     connect(&testConnectionTimer, SIGNAL(timeout()), this, SLOT(confirmConnection()));
+
+    this->safeVoltageTimer.setSingleShot(true);
+    this->safeVoltageTimer.setInterval(5000);
+    connect(&safeVoltageTimer, SIGNAL(timeout()), this, SLOT(returnToSafeVoltage()));
+    this->voltageTimer.setSingleShot(true);
 
     this->lowBatteryTriggered = false;
     this->criticalBatteryTriggered = false;
@@ -117,6 +123,11 @@ bool Device::getDisconnected() const {
     return disconnected;
 }
 
+bool Device::getReturningToSafeVoltage() const
+{
+    return returningToSafeVoltage;
+}
+
 int Device::getSelectedUserSession() const {
     return selectedUserSession;
 }
@@ -174,6 +185,8 @@ void Device::stopAllTimers() {
     this->sessionTimer.stop();
     this->powerButtonTimer.stop();
     this->testConnectionTimer.stop();
+    this->safeVoltageTimer.stop();
+    this->voltageTimer.stop();
 }
 
 void Device::softOff() {
@@ -351,15 +364,33 @@ void Device::SetConnectionStatus(int status) {
         this->confirmConnection();
     } else if (state == State::InSession && connectionStatus == ConnectionStatus::No) {  // disconnect during session
         this->pauseSession();
-        // set graph no connection
-        // after a few seconds, make graph scroll for 20 seconds
-        // set intensity to 0
+//        qDebug() << "Showing No conneciton...";
+        if (!safeVoltageTimer.isActive()) safeVoltageTimer.start();// after a few seconds, make graph scroll for 20 seconds
     } else if (state == State::Paused && connectionStatus != ConnectionStatus::No && disconnected) {  // reconnect
         disconnected = false;
         this->resumeSession();
     }
     emit this->deviceUpdated();
 }
+
+void Device::returnToSafeVoltage() {
+    if (this->disconnected){
+//        qDebug() << "Returning to safe voltage...";
+        returningToSafeVoltage = true;
+        emit safeVoltage(true);
+        this->voltageTimer.setInterval(20000);
+        disconnect(&this->voltageTimer, &QTimer::timeout, 0, 0);
+        connect(&this->voltageTimer, &QTimer::timeout, this, [this]() {
+//            qDebug() << "Finished returning to safe voltage...";
+            returningToSafeVoltage = false;
+            this->intensity = 0;
+            emit safeVoltage(false);
+            emit deviceUpdated();
+        });
+        this->voltageTimer.start();
+    }
+}
+
 void Device::SessionComplete() {
     softOff();
 }

@@ -18,6 +18,10 @@ MainWindow::MainWindow(Device* d, QWidget* parent)
     // observe
     connect(d, SIGNAL(deviceUpdated()), this, SLOT(updateDisplay()));
     connect(d, SIGNAL(connectionTest(bool)), this, SLOT(updateWavelengthBlinker(bool)));
+    connect(d, SIGNAL(safeVoltage(bool)), this, SLOT(setScrollGraph(bool)));
+
+    this->scrollGraphTimer.setInterval(500);
+    connect(&this->scrollGraphTimer, SIGNAL(timeout()), this, SLOT(scrollGraph()));
 
     // session timer timer
     this->sessionTimerChecker.setInterval(1000);
@@ -100,20 +104,55 @@ void MainWindow::updateDisplay() {
         }
     } else if (state == State::ChoosingSavedTherapy) {
         this->ui->treatmentHistoryList->setCurrentRow(device->getSelectedRecordedTherapy());
+    } else if (state == State::Paused){
+        if (this->device->getDisconnected() && !this->device->getReturningToSafeVoltage()){
+            this->setGraph(7, 8, true, "red");
+        }
     }
-
     auto wavelength = this->device->getActiveWavelength();
     this->setWavelength(wavelength, false, "red");
 
     setDeviceButtonsEnabled(state != State::Paused);
+    toggleLRChannels(this->device->getConnectionStatus() != ConnectionStatus::No);
     this->ui->powerButton->setStyleSheet("border: 5px solid green;");
     displayRecordedSessions();
     highlightSession();
 }
 
+void MainWindow::setScrollGraph(bool isStart) {
+    if (isStart){
+        scrollGraphTimer.start();
+    } else {
+        scrollGraphTimer.stop();
+    }
+}
+
+void MainWindow::scrollGraph(){
+    static int currScrollNum = 1;
+    static bool upDir = true;
+    if (this->device->getDisconnected()){
+        qDebug() << "setting graph...";
+        setGraph(currScrollNum, currScrollNum, false, "green");
+        qDebug() << currScrollNum;
+
+        if (upDir){
+            ++currScrollNum;
+            if (currScrollNum == 8) {
+                upDir = false;
+            }
+        } else {
+            --currScrollNum;
+            if (currScrollNum == 1) {
+                upDir = true;
+            }
+        }
+    }
+}
+
 void MainWindow::stopAllTimers() {
     graphTimer.stop();
     wavelengthBlinkTimer.stop();
+    scrollGraphTimer.stop();
 }
 
 void MainWindow::clearDisplay() {
@@ -134,6 +173,8 @@ void MainWindow::clearDisplay() {
     setDeviceButtonsEnabled(false);
 
     unHighlightSession();
+
+    toggleLRChannels(false);
 }
 
 void MainWindow::setDeviceButtonsEnabled(bool flag) {
@@ -221,6 +262,16 @@ void MainWindow::updateWavelengthBlinker(bool isStart) {
         this->setWavelength(wavelength, true, "red");
     } else {
         this->wavelengthBlinkTimer.stop();
+    }
+}
+
+void MainWindow::toggleLRChannels(bool flag) {
+    if (flag) {
+        ui->cesLeftIcon->setStyleSheet("color: green;");
+        ui->cesRightIcon->setStyleSheet("color: green;");
+    } else {
+        ui->cesLeftIcon->setStyleSheet("color: black;");
+        ui->cesRightIcon->setStyleSheet("color: black;");
     }
 }
 

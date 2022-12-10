@@ -30,6 +30,7 @@ private:
     QTimer graphTimer;
     QTimer wavelengthBlinkTimer;
     QTimer sessionTimerChecker;
+    QTimer scrollGraphTimer;
 
     QCommonStyle style;
     int numGraphBlinks;
@@ -53,10 +54,16 @@ private:
     void unHighlightSession();
     void unHighlightSessionGroup();
     void unHighlightSessionType();
+    void toggleLRChannels(bool);
+
+
 
 private slots:
     void updateDisplay();
     void updateWavelengthBlinker(bool);
     void displaySessionTime();
+    void setScrollGraph(bool);
+    void scrollGraph();
+
 };
 #endif // MAINWINDOW_H
