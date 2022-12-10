@@ -34,12 +34,12 @@ public:
     int getSelectedUserSession() const;
     bool getToggleRecord() const;
     QString getInputtedName() const;
-
     // pseudo-getters
     int getRemainingSessionTime();
     BatteryState getBatteryState();
 
     QVector<Therapy *> getRecordedTherapies() const;
+    QVector<SessionType*> getUserSessionTypes() const;
 
     int getSelectedRecordedTherapy() const;
 
