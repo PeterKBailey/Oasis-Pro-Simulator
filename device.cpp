@@ -338,15 +338,16 @@ void Device::ResetBattery() {
     this->SetBattery(100);
 }
 void Device::SetBattery(int batteryLevel) {
-    qDebug() << "Battery set to " << batteryLevel;
     if (batteryLevel < 0 || batteryLevel > 100)
         return;
+    qDebug() << "Battery set to " << batteryLevel;
 
     this->batteryLevel = 1.0 * batteryLevel;
     // when battery is set, we'll replay low battery animations as needed
     this->lowBatteryTriggered = false;
     this->criticalBatteryTriggered = false;
 
+    this->DepleteBattery();
     if (this->state == State::Paused && !this->disconnected) {
         this->resumeSession();
     }
