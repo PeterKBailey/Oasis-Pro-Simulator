@@ -57,7 +57,6 @@ MainWindow::~MainWindow()
 
 void MainWindow::updateDisplay(){
     this->displayBatteryInfo();
-    this->displaySessionTime();
 
     auto state = device->getState();
 
@@ -82,6 +81,8 @@ void MainWindow::updateDisplay(){
         }
     }
     else if (state == State::InSession){
+        this->displaySessionTime();
+
         if(!this->sessionTimerChecker.isActive())
             this->sessionTimerChecker.start();
         auto intensity = this->device->getIntensity();
@@ -95,10 +96,18 @@ void MainWindow::updateDisplay(){
     }
     else if(state == State::ChoosingSession){
 
+        if(this->device->getSelectedSessionGroup() == 2) {
+            int selectedUserSession = this->device->getSelectedUserSession();
+            unHighlightSessionType();
+            this->setGraph(selectedUserSession+1, selectedUserSession+1, false, "green");
+        } else {
+            if(!this->graphTimer.isActive()) {
+                this->setGraph(0,0);
+            }
+        }
     }
     else if(state == State::ChoosingSavedTherapy){
         this->ui->treatmentHistoryList->setCurrentRow(device->getSelectedRecordedTherapy());
-
     }
 
     auto wavelength = this->device->getActiveWavelength();
@@ -142,7 +151,7 @@ void MainWindow::setDeviceButtonsEnabled(bool flag)
     this->ui->intDownButton->setEnabled(flag);
 
     auto state = device->getState();
-    if(state == State::InSession){
+    if(state == State::InSession && this->device->getSelectedSessionGroup() != 2){
         this->ui->usernameInput->setEnabled(true);
     } else{
         this->ui->usernameInput->setEnabled(false);
@@ -188,6 +197,16 @@ void MainWindow::setWavelength(QString wavelength, bool blink, QString colour)
         } else{
             activeIcon->setStyleSheet("color: " + colour + ";");
             inactiveIcon->setStyleSheet("color: black;");
+        }
+    } else if(wavelength == "both") {
+        if (blink && !this->wavelengthBlinkTimer.isActive()){
+            this->isWavelengthBlinkOn = true;
+            this->wavelengthBlinkTimer.setInterval(1000);
+            this->wavelengthBlinkTimer.callOnTimeout([wavelength, this](){this->wavelengthBlink(wavelength);});
+            this->wavelengthBlinkTimer.start();
+        } else{
+            this->ui->cesSmallWaveIcon->setStyleSheet("color: " + colour + ";");
+            this->ui->cesBigWaveIcon->setStyleSheet("color: " + colour + ";");
         }
     } else {
         this->ui->cesSmallWaveIcon->setStyleSheet("color: black;");
@@ -309,23 +328,33 @@ void MainWindow::highlightSession(){
     auto sessionGroupParent = this->ui->groupLayout;
     sessionGroupParent->itemAt(currSessionGroup)->widget()->setStyleSheet("background-color: green;");
 
-    // Highlighting for selected sessiong type
-    auto sessionTypeParent = this->ui->typeLayout;
-    sessionTypeParent->itemAt(currSessionType)->widget()->setStyleSheet("background-color: green;");
+    if(this->device->getSelectedSessionGroup() != 2) {
+        // Highlighting for selected sessiong type
+        auto sessionTypeParent = this->ui->typeLayout;
+        sessionTypeParent->itemAt(currSessionType)->widget()->setStyleSheet("background-color: green;");
+    }
 }
 void MainWindow::unHighlightSession(){
+    unHighlightSessionGroup();
+    unHighlightSessionType();
+}
+
+void MainWindow::unHighlightSessionGroup(){
     // Highlighting for selected sessiong group
     auto sessionGroupParent = this->ui->groupLayout;
     for(int i = 0; i < sessionGroupParent->count(); ++i){
         sessionGroupParent->itemAt(i)->widget()->setStyleSheet("");
     }
+}
 
+void MainWindow::unHighlightSessionType(){
     // Highlighting for selected sessiong group
     auto sessionTypeParent = this->ui->typeLayout;
     for(int i = 0; i < sessionTypeParent->count(); ++i){
         sessionTypeParent->itemAt(i)->widget()->setStyleSheet("");
     }
 }
+
 
 void MainWindow::displaySessionTime(){
     int remainingTime = this->device->getRemainingSessionTime();

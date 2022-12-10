@@ -51,6 +51,8 @@ private:
     void toggleReplayButton();
     void highlightSession();
     void unHighlightSession();
+    void unHighlightSessionGroup();
+    void unHighlightSessionType();
 
 private slots:
     void updateDisplay();
