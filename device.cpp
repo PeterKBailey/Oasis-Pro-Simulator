@@ -1,7 +1,7 @@
 #include "device.h"
 
 Device::Device(QObject *parent) : QObject(parent),
-                                  batteryLevel(29),
+                                  batteryLevel(50),
                                   runBatteryAnimation(false),
                                   activeWavelength("none"),
                                   intensity(0),
@@ -425,18 +425,18 @@ void Device::DepleteBattery() {
     static int prevWholeLevel;
     prevWholeLevel = this->batteryLevel;
 
-    switch (this->state) {
-        case State::ChoosingSession:
-        case State::ChoosingSavedTherapy:
-        case State::TestingConnection:
-            this->batteryLevel -= 0.1;
-            break;
-        case State::InSession:
-            this->batteryLevel -= 0.2 + 0.1 * this->intensity;  // assuming intensity 0 or 1-8
-            break;
-        case State::Paused:
-            this->batteryLevel -= 0.05;
-            break;
+    if(this->state == State::Off){
+        return;
+    }
+    else if(this->state == State::InSession){
+        this->batteryLevel -= 0.2 + 0.1 * this->intensity; // assuming intensity 0 or 1-8
+        this->batteryLevel -= 0.01*this->connectionStatus; // Excellent = 1, Okay = 2, No = 3
+    }
+    else if(this->state == State::Paused){
+        this->batteryLevel -= 0.05;
+    }
+    else {
+        this->batteryLevel -= 0.1;
     }
 
     BatteryState currentBatteryState = this->getBatteryState();
