@@ -46,6 +46,8 @@ public:
     bool getDisconnected() const;
 
 
+    bool getReturningToSafeVoltage() const;
+
 private:
     State state;
     bool toggleRecord;
@@ -58,6 +60,8 @@ private:
     QTimer powerButtonTimer;
 
     QTimer testConnectionTimer;
+    QTimer safeVoltageTimer;
+    QTimer voltageTimer;
 
     QTimer batteryLevelTimer;
     double batteryLevel;
@@ -65,6 +69,7 @@ private:
     bool criticalBatteryTriggered;
     bool runBatteryAnimation;
     bool disconnected;
+    bool returningToSafeVoltage;
 
     QString activeWavelength;
     int intensity;
@@ -119,10 +124,12 @@ private slots:
     void PowerButtonHeld(); // for powerbutton timer
     void DepleteBattery(); // for battery timer
     void confirmConnection();
+    void returnToSafeVoltage();
 
 signals:
     void deviceUpdated();
     void connectionTest(bool);
+    void safeVoltage(bool);
 };
 
 #endif // DEVICE_H
