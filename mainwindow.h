@@ -51,11 +51,11 @@ private:
     void displayRecordedSessions();
     void toggleReplayButton();
     void highlightSession();
+    void highlightUserSessionTypes(QVector<SessionType*>);
     void unHighlightSession();
     void unHighlightSessionGroup();
     void unHighlightSessionType();
     void toggleLRChannels(bool);
-
 
 
 private slots:

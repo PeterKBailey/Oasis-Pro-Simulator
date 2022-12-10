@@ -152,6 +152,10 @@ QString Device::getInputtedName() const {
     return inputtedName;
 }
 
+QVector<SessionType*> Device::getUserSessionTypes() const {
+    return userDesignedSessions.at(selectedUserSession)->types;
+}
+
 void Device::powerOn() {
     qDebug() << "Powering on";
     this->state = State::ChoosingSession;

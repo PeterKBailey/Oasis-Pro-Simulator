@@ -369,8 +369,28 @@ void MainWindow::highlightSession() {
         // Highlighting for selected sessiong type
         auto sessionTypeParent = this->ui->typeLayout;
         sessionTypeParent->itemAt(currSessionType)->widget()->setStyleSheet("background-color: green;");
+    } else {
+        highlightUserSessionTypes(this->device->getUserSessionTypes());
     }
 }
+
+void MainWindow::highlightUserSessionTypes(QVector<SessionType*> types) {
+    //Widget containing types
+    auto sessionTypeParent = this->ui->typeLayout;
+
+    //Highlight the UI type(s) matching the parameter
+    for(SessionType* t : types) {
+        for(int i = 0; i < sessionTypeParent->count(); i++) {
+            auto currUiType = qobject_cast<QLabel *>(sessionTypeParent->itemAt(i)->widget());
+
+            if(QString::compare(t->name, currUiType->text()) == 0) {
+                currUiType->setStyleSheet("background-color: green;");
+                break;
+            }
+        }
+    }
+}
+
 void MainWindow::unHighlightSession() {
     unHighlightSessionGroup();
     unHighlightSessionType();
