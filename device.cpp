@@ -76,6 +76,11 @@ void Device::configureDevice() {
     sTypes2.append(sessionTypes.at(1));
     sTypes2.append(sessionTypes.at(2));
     userDesignedSessions.append(new UserDesignedSession("Test2", 10, sTypes2));
+
+    // Create preset recorded therapies
+    recordedTherapies.append(new Therapy(*sessionGroups[0], *sessionTypes[0], 2, "User1"));
+    recordedTherapies.append(new Therapy(*sessionGroups[1], *sessionTypes[1], 5, "User2"));
+    recordedTherapies.append(new Therapy(*sessionGroups[0], *sessionTypes[3], 8, "User3"));
 }
 
 State Device::getState() const {
@@ -259,7 +264,7 @@ void Device::INTArrowButtonClicked(QAbstractButton *directionButton) {
         } else if (QString::compare(buttonText, "intDownButton") == 0) {
             adjustIntensity(-1);
         }
-    } else if (this->state == State::ChoosingSavedTherapy) {
+    } else if (this->state == State::ChoosingRecordedTherapy) {
         // the QListWidget indexes 0 at the top, so clicking down needs to increase index
         if (QString::compare(buttonText, "intUpButton") == 0) {
             adjustSelectedRecordedTherapy(-1);
@@ -317,7 +322,7 @@ void Device::adjustSelectedRecordedTherapy(int change) {
 
 void Device::StartSessionButtonClicked() {
     // if we are starting a session from a saved therapy
-    if (this->state == State::ChoosingSavedTherapy) {
+    if (this->state == State::ChoosingRecordedTherapy) {
         auto chosenTherapy = this->recordedTherapies[this->selectedRecordedTherapy];
         for (int i = 0; i < sessionGroups.size(); ++i) {
             if (chosenTherapy->group.name == sessionGroups[i]->name) {
@@ -513,30 +518,61 @@ void Device::confirmConnection() {
     }
 }
 
-// SLOT for Input box for recording a therapy
+/*
+ * Function: UsernameInputted [SLOT]
+ * Purpose: Slot for when the username textbox is edited with new text.
+ *          Enables/Disables the "Record Therapy" button on the gui based off text in the textbox.
+ * Input: QString username represents the text the user is inputting in the username textbox.
+ * Return: N/A
+ */
 void Device::UsernameInputted(QString username) {
     this->inputtedName = username;
+
+    // Allow recording of therapy session when username textbox is not empty
     if (username.length() == 0) {
+        // Textbox is empty so DISABLE the record therapy button
         this->toggleRecord = false;
     } else {
+        // Textbox is NOT empty so ENABLE the record therapy button
         this->toggleRecord = true;
     }
     emit this->deviceUpdated();
 }
-// SLOT for Record Button clicked
+
+/*
+ * Function: RecordButtonClicked [SLOT]
+ * Purpose: Slot for when the "Record Therapy" button is clicked on the UI.
+ *          The device will record the username inputted, the session group, the sesion type, and the current intensity.
+ * Input: N/A
+ * Return: N/A
+ */
 void Device::RecordButtonClicked() {
     QString username = this->getInputtedName();
-    qDebug() << "Record Therapy button clicked... with username: " << username;
+    qDebug() << "Record Therapy button clicked... Recording current therapy with username: " << username;
+
+    // Device records session group, type, intensity with current username
     this->recordTherapy(username);
 }
 
+/*
+ * Function: ReplayButtonClicked [SLOT]
+ * Purpose: Slot for when the "Replay Therapy" button is clicked on the UI.
+ *          The device switches to the "ChoosingSavedTherapy" state.
+ * Input: N/A
+ * Return: N/A
+ */
 void Device::ReplayButtonClicked() {
     qDebug() << "Replay Therapy button clicked... setting state";
-    this->state = State::ChoosingSavedTherapy;
+    this->state = State::ChoosingRecordedTherapy;
     emit this->deviceUpdated();
 }
 
-// Record Therapy Session (Save current session group, type, intensity and username to list of recorded therapies)
+/*
+ * Function: recordTherapy
+ * Purpose: Function for creating a recorded therapy and adding to
+ * Input: QString username represents the username of the user whos therapy session we are currently recording
+ * Return: N/A
+ */
 void Device::recordTherapy(QString username) {
     qDebug() << "In recordTherapy()...";
 

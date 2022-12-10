@@ -49,7 +49,6 @@ private:
     void wavelengthBlink(QString);
     void toggleRecordButton();
     void displayRecordedSessions();
-    void toggleReplayButton();
     void highlightSession();
     void highlightUserSessionTypes(QVector<SessionType*>);
     void unHighlightSession();

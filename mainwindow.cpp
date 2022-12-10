@@ -102,7 +102,7 @@ void MainWindow::updateDisplay() {
                 this->setGraph(0, 0);
             }
         }
-    } else if (state == State::ChoosingSavedTherapy) {
+    } else if (state == State::ChoosingRecordedTherapy) {
         this->ui->treatmentHistoryList->setCurrentRow(device->getSelectedRecordedTherapy());
     } else if (state == State::Paused){
         if (this->device->getDisconnected() && !this->device->getReturningToSafeVoltage()){
@@ -178,7 +178,7 @@ void MainWindow::clearDisplay() {
 }
 
 void MainWindow::setDeviceButtonsEnabled(bool flag) {
-    this->ui->checkMarkButton->setEnabled(device->getState() == State::ChoosingSession || device->getState() == State::ChoosingSavedTherapy);
+    this->ui->checkMarkButton->setEnabled(device->getState() == State::ChoosingSession || device->getState() == State::ChoosingRecordedTherapy);
     this->ui->intUpButton->setEnabled(flag);
     this->ui->intDownButton->setEnabled(flag);
 
@@ -322,8 +322,14 @@ void MainWindow::graphBlink(int start, int end, QString colour) {
     }
 }
 
+/*
+ * Function: toggleRecordButton
+ * Purpose: Function for enabling/disabling the "Record Therapy" button on the UI.
+ * Input: N/A
+ * Return: N/A
+ */
 void MainWindow::toggleRecordButton() {
-    // Record Button only visible when there is valid text in the username input box
+    // Record Button only visible when there is valid text in the username input box and when device is in a session
     auto toggleRecord = device->getToggleRecord();
     if (device->getState() == State::InSession) {
         this->ui->recordTherapyButton->setEnabled(toggleRecord);
@@ -333,6 +339,12 @@ void MainWindow::toggleRecordButton() {
     }
 }
 
+/*
+ * Function: displayRecordedSessions
+ * Purpose: Function for updating the UI with the list of recorded therapies/treatments
+ * Input: N/A
+ * Return: N/A
+ */
 void MainWindow::displayRecordedSessions() {
     // only update treatment list when necessary
     if (device->getRecordedTherapies().length() > this->ui->treatmentHistoryList->count()) {
@@ -350,12 +362,12 @@ void MainWindow::displayRecordedSessions() {
     }
 }
 
-void MainWindow::toggleReplayButton() {
-    // Record Button only visible when there is valid text in the username input box
-    auto toggleRecord = device->getToggleRecord();
-    this->ui->replayTherapyButton->setEnabled(true);
-}
-
+/*
+ * Function: highlightSession
+ * Purpose: Function for highlighting the selected session group and session type icons on the UI.
+ * Input: N/A
+ * Return: N/A
+ */
 void MainWindow::highlightSession() {
     unHighlightSession();
     auto currSessionType = this->device->getSelectedSessionType();
@@ -391,11 +403,23 @@ void MainWindow::highlightUserSessionTypes(QVector<SessionType*> types) {
     }
 }
 
+/*
+ * Function: unHighlightSession
+ * Purpose: Function for unhighlighting the selected session group and session type icons on the UI.
+ * Input: N/A
+ * Return: N/A
+ */
 void MainWindow::unHighlightSession() {
     unHighlightSessionGroup();
     unHighlightSessionType();
 }
 
+/*
+ * Function: unHighlightSessionGroup
+ * Purpose: Function for unhighlighting all the session group icons on the UI
+ * Input: N/A
+ * Return: N/A
+ */
 void MainWindow::unHighlightSessionGroup() {
     // Highlighting for selected sessiong group
     auto sessionGroupParent = this->ui->groupLayout;
@@ -404,6 +428,12 @@ void MainWindow::unHighlightSessionGroup() {
     }
 }
 
+/*
+ * Function: unHighlightSessionGroup
+ * Purpose: Function for unhighlighting all the session type icons on the UI
+ * Input: N/A
+ * Return: N/A
+ */
 void MainWindow::unHighlightSessionType() {
     // Highlighting for selected sessiong group
     auto sessionTypeParent = this->ui->typeLayout;
