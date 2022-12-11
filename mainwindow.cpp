@@ -57,6 +57,7 @@ MainWindow::~MainWindow() {
     delete ui;
 }
 
+// update ui elements based on state of device
 void MainWindow::updateDisplay() {
     this->displayBatteryInfo();
 
@@ -119,6 +120,7 @@ void MainWindow::updateDisplay() {
     highlightSession();
 }
 
+// handler to start/stop scroll animation of graph during connection lost
 void MainWindow::setScrollGraph(bool isStart) {
     if (isStart){
         scrollGraphTimer.start();
@@ -127,14 +129,12 @@ void MainWindow::setScrollGraph(bool isStart) {
     }
 }
 
+// handler to perform scroll animation of graph during connection lost
 void MainWindow::scrollGraph(){
     static int currScrollNum = 1;
     static bool upDir = true;
     if (this->device->getDisconnected()){
-        qDebug() << "setting graph...";
         setGraph(currScrollNum, currScrollNum, false, "green");
-        qDebug() << currScrollNum;
-
         if (upDir){
             ++currScrollNum;
             if (currScrollNum == 8) {
@@ -155,6 +155,7 @@ void MainWindow::stopAllTimers() {
     scrollGraphTimer.stop();
 }
 
+// sets all ui elements back to default values
 void MainWindow::clearDisplay() {
     this->ui->powerButton->setStyleSheet("");
 
@@ -177,6 +178,7 @@ void MainWindow::clearDisplay() {
     toggleLRChannels(false);
 }
 
+// turns device buttons on/off
 void MainWindow::setDeviceButtonsEnabled(bool flag) {
     this->ui->checkMarkButton->setEnabled(device->getState() == State::ChoosingSession || device->getState() == State::ChoosingRecordedTherapy);
     this->ui->intUpButton->setEnabled(flag);
@@ -211,6 +213,7 @@ void MainWindow::displayBatteryInfo() {
     }
 }
 
+// turns wavelength icons on/off.
 void MainWindow::setWavelength(QString wavelength, bool blink, QString colour) {
     if (wavelength == "small" || wavelength == "big") {
         QLabel *activeIcon, *inactiveIcon;
@@ -244,18 +247,18 @@ void MainWindow::setWavelength(QString wavelength, bool blink, QString colour) {
     }
 }
 
+// handler to perform blink animation of wavelength icon
 void MainWindow::wavelengthBlink(QString wavelength) {
     if (isWavelengthBlinkOn) {
-        //        qDebug()<<"setting black";
         this->setWavelength(wavelength);
     } else {
-        //        qDebug()<<"setting red";
         this->setWavelength(wavelength, false, "red");
     }
 
     isWavelengthBlinkOn = !isWavelengthBlinkOn;
 }
 
+// handler to start/stop blink animation of wavelength icons
 void MainWindow::updateWavelengthBlinker(bool isStart) {
     if (isStart) {
         auto wavelength = this->device->getActiveWavelength();
@@ -265,6 +268,7 @@ void MainWindow::updateWavelengthBlinker(bool isStart) {
     }
 }
 
+// turns L/R icons on/off
 void MainWindow::toggleLRChannels(bool flag) {
     if (flag) {
         ui->cesLeftIcon->setStyleSheet("color: green;");
