@@ -256,6 +256,15 @@ void Device::PowerButtonHeld() {
     qDebug() << "power held";
 }
 
+
+/*
+ * Function: INTArrowButtonClicked [SLOT]
+ * Purpose: Slot for when the intensity buttons are clicked. Either arrow up or arrow down.
+ *          Depending on the state of the device, Intensity gets updated or selected recorded therapy gets updated
+ *          or selected session type gets updated, depended on the state.
+ * Input: QAbstractButton directionButton represents the direction of the button, either up or down.
+ * Return: N/A
+ */
 void Device::INTArrowButtonClicked(QAbstractButton *directionButton) {
     QString buttonText = directionButton->objectName();
     if (this->state == State::InSession) {
