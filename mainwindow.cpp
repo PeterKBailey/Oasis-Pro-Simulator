@@ -100,19 +100,21 @@ void MainWindow::updateDisplay() {
         auto intensity = this->device->getIntensity();
         this->setGraph(intensity, intensity, false, "green");
     } else if (state == State::ChoosingSession) {
-        if (this->device->getSelectedSessionGroup() == 2) { //User designed session
+        if (this->device->getSelectedSessionGroup() == 2) {  // User designed session
             int selectedUserSession = this->device->getSelectedUserSession();
             unHighlightSessionType();
-            this->setGraph(selectedUserSession + 1, selectedUserSession + 1, false, "green"); //Highlight graph
+            if (!this->graphTimer.isActive()) {
+                this->setGraph(selectedUserSession + 1, selectedUserSession + 1, false, "green");  // Highlight graph
+            }
         } else {
             if (!this->graphTimer.isActive()) {
-                this->setGraph(0, 0); //Reset graph when inactive
+                this->setGraph(0, 0);  // Reset graph when inactive
             }
         }
     } else if (state == State::ChoosingRecordedTherapy) {
         this->ui->treatmentHistoryList->setCurrentRow(device->getSelectedRecordedTherapy());
-    } else if (state == State::Paused){
-        if (this->device->getDisconnected() && !this->device->getReturningToSafeVoltage()){
+    } else if (state == State::Paused) {
+        if (this->device->getDisconnected() && !this->device->getReturningToSafeVoltage()) {
             this->setGraph(7, 8, true, "red");
         }
     }
@@ -128,7 +130,7 @@ void MainWindow::updateDisplay() {
 
 // handler to start/stop scroll animation of graph during connection lost
 void MainWindow::setScrollGraph(bool isStart) {
-    if (isStart){
+    if (isStart) {
         scrollGraphTimer.start();
     } else {
         scrollGraphTimer.stop();
@@ -136,12 +138,12 @@ void MainWindow::setScrollGraph(bool isStart) {
 }
 
 // handler to perform scroll animation of graph during connection lost
-void MainWindow::scrollGraph(){
+void MainWindow::scrollGraph() {
     static int currScrollNum = 1;
     static bool upDir = true;
-    if (this->device->getDisconnected()){
+    if (this->device->getDisconnected()) {
         setGraph(currScrollNum, currScrollNum, false, "green");
-        if (upDir){
+        if (upDir) {
             ++currScrollNum;
             if (currScrollNum == 8) {
                 upDir = false;
@@ -155,7 +157,7 @@ void MainWindow::scrollGraph(){
     }
 }
 
-//Stops all UI timers
+// Stops all UI timers
 void MainWindow::stopAllTimers() {
     graphTimer.stop();
     wavelengthBlinkTimer.stop();
@@ -364,6 +366,7 @@ void MainWindow::graphBlink(int start, int end, QString colour) {
         // by default blink assumes the lights are on and should be turned off
         this->isGraphBlinkOn = true;
         this->graphTimer.stop();
+        this->updateDisplay();
     }
 }
 
@@ -430,18 +433,18 @@ void MainWindow::highlightSession() {
     }
 }
 
-//Highlight the corresponding session types for a session group
+// Highlight the corresponding session types for a session group
 void MainWindow::highlightUserSessionTypes(QVector<SessionType*> types) {
-    //Widget containing types
+    // Widget containing types
     auto sessionTypeParent = this->ui->typeLayout;
 
-    //Loop through the user designed session group's session types
-    for(SessionType* t : types) {
-        for(int i = 0; i < sessionTypeParent->count(); i++) {
-            auto currUiType = qobject_cast<QLabel *>(sessionTypeParent->itemAt(i)->widget());
+    // Loop through the user designed session group's session types
+    for (SessionType* t : types) {
+        for (int i = 0; i < sessionTypeParent->count(); i++) {
+            auto currUiType = qobject_cast<QLabel*>(sessionTypeParent->itemAt(i)->widget());
 
-            //Highlight the UI type(s) matching the parameter
-            if(QString::compare(t->name, currUiType->text()) == 0) {
+            // Highlight the UI type(s) matching the parameter
+            if (QString::compare(t->name, currUiType->text()) == 0) {
                 currUiType->setStyleSheet("background-color: green;");
                 break;
             }
