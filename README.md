@@ -21,32 +21,10 @@
 ```
 ### 2 Who Did What
 #### 2.1 Use Cases
-- UC1: Basic Use Case
-  - Faheem
-  - Peter
-  - Safwan
-- UC2: Power On
-  - Faheem
-  - Safwan
-- UC3: Manual Power Off
-  - Peter
-- UC4: Select a Session
-  - Peter
-- UC5: Connection Test
-- UC6: Adjust Intensity
-- UC7: End Session
-  - Peter
-- UC8: Low Battery
-  - Peter
-- UC9: Record Session
-- UC10: Replay Therapy
-  - Peter
-- UC11: Connection Lost
+All contributed equally
 #### 2.2 Sequence Diagrams  
 - Sequence Diagram 1: Basic Use Case (UC1, UC2, UC4, UC5, UC6, UC7)
-  - Peter: Initial Setup
-  - Safwan: Break Apart
-  - Hamza: Refresh 1-3
+  - All contributed equally
 - Sequence Diagram 2: Manual Power Off (UC3)
   - Hamza
 - Sequence Diagram 3: Low Battery (UC8)
@@ -65,6 +43,28 @@
 - Safwan
 - Peter
 #### 2.5 Code
-How do we want to explain this stuff
+- UC1: Basic Use Case
+  - All contributed equally
+- UC2: Power On
+  - All contributed equally
+- UC3: Manual Power Off
+  - All contributed equally
+- UC4: Select a Session
+  - Faheem, Hamza, Vadim
+- UC5: Connection Test
+  - Safwan
+- UC6: Adjust Intensity
+  - Hamza
+- UC7: End Session
+  - Hamza
+- UC8: Low Battery
+  - Peter
+- UC9: Record Session
+  - Faheem, Vadim
+- UC10: Replay Therapy
+  - Peter, Vadim
+- UC11: Connection Lost
+  - Safwan
 ### Tested Scenarios
-What do we say here thats not in the traceability matrix?
+Everything works, check the traceability matrix :)
+
