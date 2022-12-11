@@ -54,7 +54,7 @@ Device::~Device() {
         delete userDesign;
 }
 
-// Initialize session groups and types
+// Initialize session groups/types and create preset user-designed sessions and therapies
 void Device::configureDevice() {
     // Add all session groups
     sessionGroups.append(new SessionGroup("20 Min", 20));
@@ -363,6 +363,7 @@ void Device::SetBattery(int batteryLevel) {
     emit this->deviceUpdated();
 }
 
+//handler to update state of device when connection strength slider value changes
 void Device::SetConnectionStatus(int status) {
     auto prevStatus = this->connectionStatus;
     this->connectionStatus = status == 0 ? ConnectionStatus::No : status == 1 ? ConnectionStatus::Okay
@@ -374,7 +375,6 @@ void Device::SetConnectionStatus(int status) {
         this->confirmConnection();
     } else if (state == State::InSession && connectionStatus == ConnectionStatus::No) {  // disconnect during session
         this->pauseSession();
-//        qDebug() << "Showing No conneciton...";
         if (!safeVoltageTimer.isActive()) safeVoltageTimer.start();// after a few seconds, make graph scroll for 20 seconds
     } else if (state == State::Paused && connectionStatus != ConnectionStatus::No && disconnected) {  // reconnect
         disconnected = false;
@@ -383,15 +383,14 @@ void Device::SetConnectionStatus(int status) {
     emit this->deviceUpdated();
 }
 
+//handler to start returning device to safe voltage level when disconnected during a session
 void Device::returnToSafeVoltage() {
     if (this->disconnected){
-//        qDebug() << "Returning to safe voltage...";
         returningToSafeVoltage = true;
         emit safeVoltage(true);
         this->voltageTimer.setInterval(20000);
         disconnect(&this->voltageTimer, &QTimer::timeout, 0, 0);
         connect(&this->voltageTimer, &QTimer::timeout, this, [this]() {
-//            qDebug() << "Finished returning to safe voltage...";
             returningToSafeVoltage = false;
             this->intensity = 0;
             emit safeVoltage(false);
@@ -476,6 +475,7 @@ void Device::DepleteBattery() {
     }
 }
 
+// start a session
 void Device::startSession() {
     // session can not be started with low battery or invalid values
     if (this->getBatteryState() == BatteryState::Critical || this->selectedSessionGroup < 0 || this->selectedSessionType < 0) {
