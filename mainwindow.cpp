@@ -359,7 +359,7 @@ void MainWindow::displayRecordedSessions() {
         int listLength = list.length();
         for (int i = 0; i < list.length(); ++i) {
             QListWidgetItem* item = new QListWidgetItem;
-            item->setText("Username: " + list[i]->username + " Group: " + list[i]->group.name + " Type: " + list[i]->type.name + " Intensity: " + QString::number(list[i]->intensity));
+            item->setText(list[i]->username + " | " + list[i]->group.name + " | " + list[i]->type.name + " | " + QString::number(list[i]->intensity));
             item->setData(Qt::UserRole, QString::number(i));
             ui->treatmentHistoryList->addItem(item);
         }
