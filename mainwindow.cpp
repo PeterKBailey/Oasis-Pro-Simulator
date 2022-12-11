@@ -356,7 +356,6 @@ void MainWindow::displayRecordedSessions() {
 
         int widgetLength = ui->treatmentHistoryList->count();
         auto list = device->getRecordedTherapies();
-        int listLength = list.length();
         for (int i = 0; i < list.length(); ++i) {
             QListWidgetItem* item = new QListWidgetItem;
             item->setText(list[i]->username + " | " + list[i]->group.name + " | " + list[i]->type.name + " | " + QString::number(list[i]->intensity));
