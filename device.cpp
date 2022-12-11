@@ -263,7 +263,6 @@ void Device::PowerButtonHeld() {
     qDebug() << "power held";
 }
 
-
 /*
  * Function: INTArrowButtonClicked [SLOT]
  * Purpose: Slot for when the intensity buttons are clicked. Either arrow up or arrow down.
