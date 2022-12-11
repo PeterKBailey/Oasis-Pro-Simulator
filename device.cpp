@@ -67,11 +67,10 @@ void Device::configureDevice() {
     sessionTypes.append(new SessionType("Delta", "small"));
     sessionTypes.append(new SessionType("Theta", "small"));
 
-    // Add test user designed sessions
+    // Add preset user designed sessions
     QVector<SessionType *> sTypes1;
     sTypes1.append(sessionTypes.at(0));
     userDesignedSessions.append(new UserDesignedSession("Test1", 20, sTypes1));
-
     QVector<SessionType *> sTypes2;
     sTypes2.append(sessionTypes.at(1));
     sTypes2.append(sessionTypes.at(2));
@@ -161,6 +160,7 @@ QVector<SessionType*> Device::getUserSessionTypes() const {
     return userDesignedSessions.at(selectedUserSession)->types;
 }
 
+//Power on the device
 void Device::powerOn() {
     qDebug() << "Powering on";
     this->state = State::ChoosingSession;
@@ -168,12 +168,16 @@ void Device::powerOn() {
     this->activeWavelength = sessionTypes[selectedSessionType]->wavelength;
     emit this->deviceUpdated();
 }
+
+//Power off the device
+//Reset state and timer variables
 void Device::powerOff() {
     qDebug() << "Powering off";
     this->state = State::Off;
 
     stopAllTimers();
 
+    //Reset state variables
     this->intensity = 0;
     this->lowBatteryTriggered = false;
     this->criticalBatteryTriggered = false;
@@ -188,6 +192,7 @@ void Device::powerOff() {
     emit this->deviceUpdated();
 }
 
+//Stops all device timers
 void Device::stopAllTimers() {
     this->batteryLevelTimer.stop();
     this->softOffTimer.stop();
@@ -198,14 +203,15 @@ void Device::stopAllTimers() {
     this->voltageTimer.stop();
 }
 
+//Slowly power off the device
 void Device::softOff() {
     qDebug() << "Soft Off initiated";
     this->sessionTimer.stop();
-
     this->state = State::SoftOff;
     softOffTimer.start();
 }
 
+//Reduce intensity to 1
 void Device::CesReduction() {
     if (intensity <= 1) {
         softOffTimer.stop();
@@ -235,6 +241,7 @@ void Device::PowerButtonReleased() {
     } else if (this->state == State::ChoosingSession) {
         this->selectedSessionGroup = (this->selectedSessionGroup + 1) % sessionGroups.size();
 
+        //Determine wavelength
         if (selectedSessionGroup == 2) {
             userSessionWaveLength();
         } else {
@@ -256,7 +263,6 @@ void Device::PowerButtonHeld() {
     qDebug() << "power held";
 }
 
-
 /*
  * Function: INTArrowButtonClicked [SLOT]
  * Purpose: Slot for when the intensity buttons are clicked. Either arrow up or arrow down.
@@ -268,48 +274,53 @@ void Device::PowerButtonHeld() {
 void Device::INTArrowButtonClicked(QAbstractButton *directionButton) {
     QString buttonText = directionButton->objectName();
     if (this->state == State::InSession) {
-        if (QString::compare(buttonText, "intUpButton") == 0) {
+        if (QString::compare(buttonText, "intUpButton") == 0) { //Up Button
             adjustIntensity(1);
-        } else if (QString::compare(buttonText, "intDownButton") == 0) {
+        } else if (QString::compare(buttonText, "intDownButton") == 0) { //Down Button
             adjustIntensity(-1);
         }
     } else if (this->state == State::ChoosingRecordedTherapy) {
         // the QListWidget indexes 0 at the top, so clicking down needs to increase index
-        if (QString::compare(buttonText, "intUpButton") == 0) {
+        if (QString::compare(buttonText, "intUpButton") == 0) { //Up Button
             adjustSelectedRecordedTherapy(-1);
-        } else if (QString::compare(buttonText, "intDownButton") == 0) {
+        } else if (QString::compare(buttonText, "intDownButton") == 0) { //Down Button
             adjustSelectedRecordedTherapy(1);
         }
         this->activeWavelength = recordedTherapies[this->selectedRecordedTherapy]->type.wavelength;
     } else if (this->state == State::ChoosingSession) {
-        if (QString::compare(buttonText, "intUpButton") == 0) {
+        if (QString::compare(buttonText, "intUpButton") == 0) { //Up Button
             if (selectedSessionGroup != 2) {
+                //Change selected session Type
                 this->selectedSessionType = (this->selectedSessionType + 1) % sessionTypes.size();
-            } else {
+                qDebug() << "UPDATED SESSION TYPE: " << sessionTypes[this->selectedSessionType]->name;
+            } else { // User designed Session Group is selected
+                // Change selected user session
                 this->selectedUserSession = (this->selectedUserSession + 1) % userDesignedSessions.size();
-                userSessionWaveLength();
                 qDebug() << "User session: " << selectedUserSession;
             }
-        } else if (QString::compare(buttonText, "intDownButton") == 0) {
+        } else if (QString::compare(buttonText, "intDownButton") == 0) { //Down Button
             if (selectedSessionGroup != 2) {
+                //Change selected session Type
                 this->selectedSessionType = (this->selectedSessionType == 0) ? sessionTypes.size() - 1 : this->selectedSessionType - 1;
-            } else {
+                qDebug() << "UPDATED SESSION TYPE: " << sessionTypes[this->selectedSessionType]->name;
+            } else { // User designed Session Group
+                // Change selected user session
                 this->selectedUserSession = (this->selectedUserSession == 0) ? userDesignedSessions.size() - 1 : this->selectedUserSession - 1;
                 qDebug() << "User session: " << selectedUserSession;
             }
         }
 
+        //Determine Wavelength
         if (selectedSessionGroup == 2) {
             userSessionWaveLength();
         } else {
             this->activeWavelength = sessionTypes[this->selectedSessionType]->wavelength;
         }
-
-        qDebug() << "UPDATED SESSION TYPE: " << sessionTypes[this->selectedSessionType]->name;
     }
     emit this->deviceUpdated();
 }
 
+//Modify the device intensity by the parameter's value
 void Device::adjustIntensity(int change) {
     int newIntensity = intensity + change;
 
@@ -329,6 +340,7 @@ void Device::adjustSelectedRecordedTherapy(int change) {
     }
 }
 
+//Event handler for when the start sesssion button is clicked
 void Device::StartSessionButtonClicked() {
     // if we are starting a session from a saved therapy
     if (this->state == State::ChoosingRecordedTherapy) {
@@ -409,6 +421,8 @@ void Device::returnToSafeVoltage() {
     }
 }
 
+//Slot for session timer timeout
+//Initiate soft off
 void Device::SessionComplete() {
     softOff();
 }
@@ -608,6 +622,7 @@ void Device::recordTherapy(QString username) {
     emit this->deviceUpdated();
 }
 
+//Determine the wave length for a user session
 void Device::userSessionWaveLength() {
     // determine active wavelength
     bool isSmall = false;

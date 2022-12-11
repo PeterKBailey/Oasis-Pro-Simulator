@@ -94,13 +94,13 @@ void MainWindow::updateDisplay() {
         auto intensity = this->device->getIntensity();
         this->setGraph(intensity, intensity, false, "green");
     } else if (state == State::ChoosingSession) {
-        if (this->device->getSelectedSessionGroup() == 2) {
+        if (this->device->getSelectedSessionGroup() == 2) { //User designed session
             int selectedUserSession = this->device->getSelectedUserSession();
             unHighlightSessionType();
-            this->setGraph(selectedUserSession + 1, selectedUserSession + 1, false, "green");
+            this->setGraph(selectedUserSession + 1, selectedUserSession + 1, false, "green"); //Highlight graph
         } else {
             if (!this->graphTimer.isActive()) {
-                this->setGraph(0, 0);
+                this->setGraph(0, 0); //Reset graph when inactive
             }
         }
     } else if (state == State::ChoosingRecordedTherapy) {
@@ -149,6 +149,7 @@ void MainWindow::scrollGraph(){
     }
 }
 
+//Stops all UI timers
 void MainWindow::stopAllTimers() {
     graphTimer.stop();
     wavelengthBlinkTimer.stop();
@@ -389,15 +390,17 @@ void MainWindow::highlightSession() {
     }
 }
 
+//Highlight the corresponding session types for a session group
 void MainWindow::highlightUserSessionTypes(QVector<SessionType*> types) {
     //Widget containing types
     auto sessionTypeParent = this->ui->typeLayout;
 
-    //Highlight the UI type(s) matching the parameter
+    //Loop through the user designed session group's session types
     for(SessionType* t : types) {
         for(int i = 0; i < sessionTypeParent->count(); i++) {
             auto currUiType = qobject_cast<QLabel *>(sessionTypeParent->itemAt(i)->widget());
 
+            //Highlight the UI type(s) matching the parameter
             if(QString::compare(t->name, currUiType->text()) == 0) {
                 currUiType->setStyleSheet("background-color: green;");
                 break;
