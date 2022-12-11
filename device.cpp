@@ -112,6 +112,8 @@ BatteryState Device::getBatteryState() {
 }
 
 int Device::getRemainingSessionTime() {
+//    qDebug() << "the device is paused: " << (this->state == State::Paused);
+//    qDebug() << "this much time left: " << this->remainingSessionTime;
     return this->state == State::Paused ? remainingSessionTime : this->sessionTimer.remainingTime();
 }
 
@@ -331,6 +333,13 @@ void Device::adjustIntensity(int change) {
     }
 }
 
+/*
+    Function: adjustSelectedRecordedTherapy
+    Purpose: Adjust the currently selected recorded therapy from the treatment history list
+    Inputs:
+        change: integer (usually 1 or -1) moving the selected therapy up or down the list
+    Return: void
+*/
 void Device::adjustSelectedRecordedTherapy(int change) {
     int newSelection = this->selectedRecordedTherapy + change;
 
@@ -364,9 +373,22 @@ void Device::StartSessionButtonClicked() {
     enterTestMode();
 }
 
+/*
+    Function: ResetBattery [Slot]
+    Purpose: Set the battery to 100% quickly
+    Return: void
+*/
 void Device::ResetBattery() {
     this->SetBattery(100);
 }
+
+/*
+    Function: SetBattery [Slot]
+    Purpose: Set the battery to a specified percentage and resume the session if one is ongoing
+    Inputs:
+        batteryLevel: integer the new battery percentage
+    Return: void
+*/
 void Device::SetBattery(int batteryLevel) {
     if (batteryLevel < 0 || batteryLevel > 100)
         return;
@@ -427,14 +449,31 @@ void Device::SessionComplete() {
     softOff();
 }
 
+/*
+    Function: pauseSession
+    Purpose: Pauses a session by putting by recording
+             how much time is left and putting the device in the Paused state
+    Return: void
+*/
 void Device::pauseSession() {
+    if(this->state == State::Paused){
+        return;
+    }
     // only works for singlshot (?)
+    qDebug() << "pausing session.";
     this->remainingSessionTime = this->sessionTimer.remainingTime();
+    qDebug() << "This much time left: " << this->remainingSessionTime;
     this->sessionTimer.stop();
+    qDebug() << "Timer stopped";
     this->state = State::Paused;
     emit this->deviceUpdated();
 }
 
+/*
+    Function: resumeSession
+    Purpose: Resume a paused session if there is one to resume.
+    Return: void
+*/
 void Device::resumeSession() {
     if (this->getBatteryState() == BatteryState::Critical) {
         return;  // session can not be resumed with low battery
@@ -447,11 +486,18 @@ void Device::resumeSession() {
     }
     // otherwise
     else {
-        this->state = State::ChoosingSession;  // maybe?
+        this->state = State::ChoosingSession;
     }
     emit this->deviceUpdated();
 }
 
+/*
+    Function: DepleteBattery [Slot]
+    Purpose: Depletes the battery based on what the device is doing.
+             State, intensity, connection status all play a role.
+             Generally runs using the batteryLevelTimer.
+    Return: void
+*/
 void Device::DepleteBattery() {
     static int prevWholeLevel;
     prevWholeLevel = this->batteryLevel;
