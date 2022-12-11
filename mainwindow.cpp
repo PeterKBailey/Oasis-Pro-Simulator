@@ -43,6 +43,11 @@ MainWindow::MainWindow(Device* d, QWidget* parent)
     clearDisplay();
 }
 
+/*
+    Function: setupGraph
+    Purpose: Store graph widgets in an easily accessible vector
+    Return: void
+ */
 void MainWindow::setupGraph() {
     auto gWidget = this->ui->graphWidget;
     for (int i = 1; i < 9; ++i) {
@@ -58,6 +63,7 @@ MainWindow::~MainWindow() {
 }
 
 // update ui elements based on state of device
+// observer pattern
 void MainWindow::updateDisplay() {
     this->displayBatteryInfo();
 
@@ -194,6 +200,12 @@ void MainWindow::setDeviceButtonsEnabled(bool flag) {
     this->toggleRecordButton();
 }
 
+/*
+    Function: displayBatteryInfo
+    Purpose: Set UI elements based on battery state. Show current percentage
+             and also show have the graph blink in the low battery states.
+    Return: void
+ */
 void MainWindow::displayBatteryInfo() {
     auto newBatteryLevel = (int)device->getBatteryLevel();
     BatteryState newBatteryState = device->getBatteryState();
@@ -280,6 +292,16 @@ void MainWindow::toggleLRChannels(bool flag) {
     }
 }
 
+/*
+    Function: setGraph
+    Purpose: Set the graph to display as inputs request
+    Inputs:
+        start: integer, first light in range to light up
+        end: integer, second light in range to light up
+        blink: boolean, whether the range should blink
+        colour: QString, what colour the graph should display
+    Return: void
+ */
 void MainWindow::setGraph(int start, int end, bool blink, QString colour) {
     // stop the graph timer so that it doesn't reset changes
     this->graphTimer.stop();
@@ -297,6 +319,15 @@ void MainWindow::setGraph(int start, int end, bool blink, QString colour) {
     }
 }
 
+/*
+    Function: setGraphLights
+    Purpose: Set the graph lights directly, used as a helper
+    Inputs:
+        start: integer, first light in range to light up
+        end: integer, second light in range to light up
+        colour: QString, what colour the graph should display
+    Return: void
+ */
 void MainWindow::setGraphLights(int start, int end, QString colour) {
     for (int i = 1; i < 9; ++i) {
         if (i >= start && i <= end) {
@@ -307,6 +338,15 @@ void MainWindow::setGraphLights(int start, int end, QString colour) {
     }
 }
 
+/*
+    Function: graphBlink
+    Purpose: cause the graph to blink on or off
+    Inputs:
+        start: integer, first light in range to light up
+        end: integer, second light in range to light up
+        colour: Qstring, what colour the graph should display
+    Return: void
+ */
 void MainWindow::graphBlink(int start, int end, QString colour) {
     // if on, turn off
     if (this->isGraphBlinkOn) {
@@ -448,6 +488,11 @@ void MainWindow::unHighlightSessionType() {
     }
 }
 
+/*
+    Function: displaySessionTime
+    Purpose: Display the current amount of time left in the session
+    Return: void
+ */
 void MainWindow::displaySessionTime() {
     int remainingTime = this->device->getRemainingSessionTime();
     qDebug() << "Session time remaining: " << remainingTime;
